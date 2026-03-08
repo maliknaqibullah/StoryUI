@@ -1,6 +1,6 @@
 //
 //  SwiftUIView.swift
-//  
+//
 //
 //  Created by Tolga İskender on 4.06.2023.
 //
@@ -32,17 +32,19 @@ struct EmojiView: View {
     }
     
     var body: some View {
-        if let emojiArray {
+        if let emojiArray = emojiArray {
             VStack(spacing: spacing) {
-                ForEach(emojiArray.lazy.indices) { index in
+                ForEach(0..<emojiArray.count, id: \.self) { index in
                     HStack(spacing: spacing) {
-                        ForEach(emojiArray[index].lazy.indices) { icon in
-                            Button(emojiArray[index][icon]) {
+                        ForEach(0..<emojiArray[index].count, id: \.self) { icon in
+                            Button(action: {
                                 let emoji = emojiArray[index][icon]
                                 startAnimate()
                                 select(emoji: emoji)
                                 dismissKeyboard()
                                 userClosure?(story, nil, emoji, false)
+                            }) {
+                                Text(emojiArray[index][icon])
                             }
                             .font(.system(size: emojiSize))
                         }
@@ -50,7 +52,6 @@ struct EmojiView: View {
                 }
             }
         }
-        
     }
     
     private func dismissKeyboard() {
