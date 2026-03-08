@@ -77,6 +77,8 @@ struct StoryDetailView: View {
         }
         .onChange(of: viewModel.currentStoryUser) { newValue in
             NotificationCenter.default.post(name: .stopVideo, object: nil)
+            currentStoryProgress = 0 // Add this line
+            timerProgress = 0 // Add this line
             resetProgress()
             playVideo()
         }
@@ -236,12 +238,14 @@ private extension StoryDetailView {
     }
     
     func getPreviousStory() {
-        
         if let first = viewModel.stories.first, first.id != model.id {
-
             let bundleIndex = viewModel.stories.firstIndex { currentBundle in
                 return model.id == currentBundle.id
             } ?? 0
+            
+            // Reset progress before moving to previous user
+            currentStoryProgress = 0
+            timerProgress = 0
             
             withAnimation {
                 viewModel.currentStoryUser = viewModel.stories[bundleIndex - 1].id
@@ -249,12 +253,18 @@ private extension StoryDetailView {
         } else {
             let index = getCurrentIndex()
             let story = getStory(with: index)
-            if story.config.mediaType == .video {
+            
+            if index > 0 {
+                // Moving to previous story in same user
+                currentStoryProgress = 0
+                timerProgress = CGFloat(index - 1)
+            } else if story.config.mediaType == .video {
+                // Already at first story, restart video
                 NotificationCenter.default.post(name: .stopAndRestartVideo, object: nil)
+                currentStoryProgress = 0
                 resetProgress()
             }
         }
-        return
     }
     
     func getNextStory() {
@@ -271,13 +281,20 @@ private extension StoryDetailView {
                     return model.id == currentBundle.id
                 } ?? 0
                 
+                // Reset progress before moving to next user
+                currentStoryProgress = 0
+                timerProgress = 0
+                
                 withAnimation {
                     viewModel.currentStoryUser = viewModel.stories[bundleIndex + 1].id
                 }
             }
+        } else {
+            // Moving to next story in same user - reset progress
+            currentStoryProgress = 0
+            timerProgress = CGFloat(index + 1)
         }
     }
-    
     func pauseStory() {
         isPaused = true
         if model.stories[getCurrentIndex()].config.mediaType == .video {
@@ -331,25 +348,30 @@ private extension StoryDetailView {
     func tapNextStory() {
         configureTapScreen()
         guard !isTapDisabled else { return }
+        
         if (timerProgress + 1) > CGFloat(model.stories.count) {
-            //next user
+            // Next user
             updateStory()
         } else {
-            //next Story
+            // Next story - reset progress for new story
+            currentStoryProgress = 0
             timerProgress = CGFloat(Int(timerProgress + 1))
         }
     }
-    
+
     func tapPreviousStory() {
         configureTapScreen()
         guard !isTapDisabled else { return }
+        
         if (timerProgress - 1) < 0 {
+            // Previous user
             updateStory(direction: .previous)
         } else {
+            // Previous story - reset progress for new story
+            currentStoryProgress = 0
             timerProgress = CGFloat(Int(timerProgress - 1))
         }
     }
-    
     func start(index: Int) {
         if !model.stories[index].isReady {
             model.stories[index].isReady = true
