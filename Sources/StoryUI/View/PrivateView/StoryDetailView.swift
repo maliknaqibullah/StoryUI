@@ -15,9 +15,9 @@ struct StoryDetailView: View {
     @State var model: StoryUIModel
     @Binding var isPresented: Bool
     
-    @State var timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    @State var timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
     @State var timerProgress: CGFloat = 0
-
+    @State var currentStoryProgress: CGFloat = 0
     @State private var isPaused: Bool = false
 
     let userClosure: UserCompletionHandler?
@@ -162,8 +162,9 @@ private extension StoryDetailView {
             HStack(spacing: Constant.progressBarSpacing) {
                 ForEach(model.stories.indices) { index in
                     ProgressBarView(
-                        timerProgress: timerProgress,
-                        index: index
+                        progress: index == getCurrentIndex() ? currentStoryProgress : (index < getCurrentIndex() ? 1.0 : 0.0),
+                        isActive: index == getCurrentIndex(),
+                        isCompleted: index < getCurrentIndex()
                     )
                 }
             }
@@ -293,7 +294,6 @@ private extension StoryDetailView {
     
     func startProgress() {
         guard !isTimerRunning && !isPaused else { return }
-//        guard !isTimerRunning else { return }
         
         let index = getCurrentIndex()
         let story = getStory(with: index)
@@ -304,14 +304,22 @@ private extension StoryDetailView {
             }
             if timerProgress < CGFloat(model.stories.count) {
                 if story.isReady {
-                    getProgressBarFrame(duration: story.duration)
+                    let increment = 0.01 / story.duration
+                    currentStoryProgress += increment
+                    timerProgress = CGFloat(index) + currentStoryProgress
+                    
+                    if currentStoryProgress >= 1.0 {
+                        currentStoryProgress = 0
+                        if index + 1 < model.stories.count {
+                            timerProgress = CGFloat(index + 1)
+                        }
+                    }
                 }
             } else {
                 updateStory()
             }
         }
     }
-    
     func updateStory(direction: StoryDirectionEnum = .next) {
         if direction == .previous {
             getPreviousStory()
@@ -348,10 +356,10 @@ private extension StoryDetailView {
         }
     }
     
-    func getProgressBarFrame(duration: Double) {
-        let calculatedDuration = viewModel.getVideoProgressBarFrame(duration: duration)
-        timerProgress += (0.01 / calculatedDuration)
-    }
+//    func getProgressBarFrame(duration: Double) {
+//        let calculatedDuration = viewModel.getVideoProgressBarFrame(duration: duration)
+//        timerProgress += (0.01 / calculatedDuration)
+//    }
     
     func dissmis() {
         isPresented = false

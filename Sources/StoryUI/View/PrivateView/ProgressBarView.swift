@@ -8,25 +8,30 @@
 import SwiftUI
 
 struct ProgressBarView: View {
-    var timerProgress: CGFloat
-    var index: Int
+    let progress: CGFloat
+    let isActive: Bool
+    let isCompleted: Bool
     
     var body: some View {
-        GeometryReader { proxy in
-            
-            let width = proxy.size.width
-            let progress = timerProgress - CGFloat(index)
-            let perfectProgress = min(max(progress, 0), 1)
-            
-            Capsule()
-                .fill(.gray.opacity(0.5))
-                .overlay (
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Background bar
+                Capsule()
+                    .fill(Color.white.opacity(0.3))
+                    .frame(height: 4)
+                
+                // Foreground progress
+                if isActive {
                     Capsule()
-                        .fill(.white)
-                        .frame(width: width * perfectProgress)
-                    
-                    ,alignment: .leading
-                )
-        }.frame(height: Constant.progressBarHeight)
+                        .fill(Color.white)
+                        .frame(width: geometry.size.width * progress, height: 4)
+                } else if isCompleted {
+                    Capsule()
+                        .fill(Color.white)
+                        .frame(width: geometry.size.width, height: 4)
+                }
+            }
+        }
+        .frame(height: 4)
     }
 }
