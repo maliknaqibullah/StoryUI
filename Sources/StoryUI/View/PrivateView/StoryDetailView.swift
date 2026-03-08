@@ -18,7 +18,8 @@ struct StoryDetailView: View {
     @State var timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     @State var timerProgress: CGFloat = 0
 
-    
+    @State private var isPaused: Bool = false
+
     let userClosure: UserCompletionHandler?
     
     // MARK: Private Properties
@@ -193,17 +194,32 @@ private extension StoryDetailView {
     
     @ViewBuilder
     func tapStory() -> some View {
-        HStack {
+        HStack(spacing: 0) {
             Rectangle()
                 .fill(.black.opacity(0.01))
                 .onTapGesture {
                     tapPreviousStory()
                 }
+                .onLongPressGesture(minimumDuration: 0.2, pressing: { isPressing in
+                    if isPressing {
+                        pauseStory()
+                    } else {
+                        resumeStory()
+                    }
+                }, perform: {})
+            
             Rectangle()
                 .fill(.black.opacity(0.01))
                 .onTapGesture {
                     tapNextStory()
                 }
+                .onLongPressGesture(minimumDuration: 0.2, pressing: { isPressing in
+                    if isPressing {
+                        pauseStory()
+                    } else {
+                        resumeStory()
+                    }
+                }, perform: {})
         }
     }
     
@@ -261,8 +277,23 @@ private extension StoryDetailView {
         }
     }
     
+    func pauseStory() {
+        isPaused = true
+        if model.stories[getCurrentIndex()].config.mediaType == .video {
+            player.pause()
+        }
+    }
+
+    func resumeStory() {
+        isPaused = false
+        if model.stories[getCurrentIndex()].config.mediaType == .video {
+            player.play()
+        }
+    }
+    
     func startProgress() {
-        guard !isTimerRunning else { return }
+        guard !isTimerRunning && !isPaused else { return }
+//        guard !isTimerRunning else { return }
         
         let index = getCurrentIndex()
         let story = getStory(with: index)
@@ -383,3 +414,4 @@ private extension StoryDetailView {
         }
     }
 }
+
