@@ -100,7 +100,8 @@ struct StoryDetailView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .storyDeleteTapped)) { _ in
             guard isMyStory else { return }
-            onDeleteTapped?(model.id)
+            let currentStoryID = model.stories[safe: getCurrentIndex()]?.id ?? ""
+            onDeleteTapped?(currentStoryID)   // ← pass story ID not model ID
         }
     }
 }
