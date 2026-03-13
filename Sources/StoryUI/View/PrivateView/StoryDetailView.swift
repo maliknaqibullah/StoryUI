@@ -19,7 +19,6 @@ struct StoryDetailView: View {
     @State var timerProgress: CGFloat = 0
     @State var currentStoryProgress: CGFloat = 0
     @State private var isPaused: Bool = false
-    @State private var showingDeleteConfirm = false
 
     let userClosure: UserCompletionHandler?
     let onUserChanged: ((String) -> Void)?    // ← ADD
@@ -99,6 +98,10 @@ struct StoryDetailView: View {
             configureProgress(with: state)
             isTimerRunning = state
         }
+        .onReceive(NotificationCenter.default.publisher(for: .storyDeleteTapped)) { _ in
+            guard isMyStory else { return }
+            onDeleteTapped?(model.id)
+        }
     }
 }
 
@@ -167,10 +170,6 @@ private extension StoryDetailView {
     
     @ViewBuilder
     func getUserInfoAndProgressBar(with index: Int) -> some View {
-        let date  = getStory(with: index).date ?? ""
-        let name  = model.user.name
-        let image = model.user.image
-
         VStack {
             HStack(spacing: Constant.progressBarSpacing) {
                 ForEach(model.stories.indices) { i in
@@ -185,17 +184,14 @@ private extension StoryDetailView {
             .padding(.vertical, 8)
 
             UserView(
-                image: image,
-                name: name,
-                date: date,
+                image: model.user.image,
+                name: model.user.name,
+                date: model.stories[safe: index]?.date ?? "",
                 isMyStory: isMyStory,
-                onDeleteTapped: { onDeleteTapped?(model.id) },
                 isPresented: $isPresented
             )
-            .drawingGroup() // ← forces rasterization, stops image blinking
         }
     }
-    
     @ViewBuilder
     func messageView(with index: Int) -> some View {
         let story = getStory(with: index)
@@ -460,3 +456,9 @@ private extension StoryDetailView {
     }
 }
 
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}

@@ -13,7 +13,6 @@ struct UserView: View {
     var name: String
     var date: String
     var isMyStory: Bool = false
-    var onDeleteTapped: (() -> Void)? = nil
     
     @Binding var isPresented: Bool
     
@@ -31,20 +30,22 @@ struct UserView: View {
             
             Spacer()
 
-            // Trash — only for my own stories
             if isMyStory {
                 Image(systemName: "trash")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.white)
+                    .padding(12)
+                    .contentShape(Rectangle())
                     .onTapGesture {
-                        onDeleteTapped?()
+                        NotificationCenter.default.post(name: .storyDeleteTapped, object: nil)
                     }
             }
 
             Image(systemName: "xmark")
                 .font(.system(size: 18, weight: .medium))
                 .foregroundColor(.white)
-                .padding(.leading, 16)   // ← space between trash and xmark
+                .padding(12)
+                .contentShape(Rectangle())
                 .onTapGesture {
                     NotificationCenter.default.post(name: .replaceCurrentItem, object: nil)
                     isPresented = false
