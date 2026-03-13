@@ -21,6 +21,8 @@ struct StoryDetailView: View {
     @State private var isPaused: Bool = false
 
     let userClosure: UserCompletionHandler?
+    let onUserChanged: ((String) -> Void)?    // ← ADD
+
     
     // MARK: Private Properties
     @ObservedObject private var keyboardManager = KeyboardManager()
@@ -81,6 +83,8 @@ struct StoryDetailView: View {
             timerProgress = 0 // Add this line
             resetProgress()
             playVideo()
+            onUserChanged?(newValue)          // ← ADD this one line
+
         }
         .onReceive(timer) { _ in
             startProgress()

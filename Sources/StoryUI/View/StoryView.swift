@@ -19,7 +19,8 @@ public struct StoryView: View {
  
     // Public properties
     let userClosure: UserCompletionHandler?
-    
+    let onUserChanged: ((String) -> Void)?          // ← ADD
+
     
     /// Stories and isPresented required, selectedIndex is optional default: 0
     /// - Parameters:
@@ -30,12 +31,16 @@ public struct StoryView: View {
         stories: [StoryUIModel],
         selectedIndex: Int = 0,
         isPresented: Binding<Bool>,
-        userClosure: UserCompletionHandler? = nil
+        userClosure: UserCompletionHandler? = nil,
+        onUserChanged: ((String) -> Void)? = nil    // ← ADD
+
     ) {
         self.stories = stories
         self.selectedIndex = selectedIndex
         self._isPresented = isPresented
         self.userClosure = userClosure
+        self.onUserChanged = onUserChanged           // ← ADD
+
     }
     
     public var body: some View {
@@ -48,7 +53,9 @@ public struct StoryView: View {
                             viewModel: viewModel,
                             model: model,
                             isPresented: $isPresented,
-                            userClosure: userClosure
+                            userClosure: userClosure,
+                            onUserChanged: onUserChanged   // ← ADD
+
                         )
                     }
                 }
@@ -58,6 +65,8 @@ public struct StoryView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear() {
                 startStory()
+                onUserChanged?(stories[selectedIndex < stories.count ? selectedIndex : 0].id) // ← ADD
+
             }
             .onDisappear() {
                stopVideo()
