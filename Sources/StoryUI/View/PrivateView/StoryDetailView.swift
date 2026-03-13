@@ -19,6 +19,7 @@ struct StoryDetailView: View {
     @State var timerProgress: CGFloat = 0
     @State var currentStoryProgress: CGFloat = 0
     @State private var isPaused: Bool = false
+    @State private var showingDeleteConfirm = false
 
     let userClosure: UserCompletionHandler?
     let onUserChanged: ((String) -> Void)?    // ← ADD
@@ -166,16 +167,17 @@ private extension StoryDetailView {
     
     @ViewBuilder
     func getUserInfoAndProgressBar(with index: Int) -> some View {
-        let date  = getStory(with: index).date
+        let date  = getStory(with: index).date ?? ""
         let name  = model.user.name
         let image = model.user.image
+
         VStack {
             HStack(spacing: Constant.progressBarSpacing) {
-                ForEach(model.stories.indices) { index in
+                ForEach(model.stories.indices) { i in
                     ProgressBarView(
-                        progress: index == getCurrentIndex() ? currentStoryProgress : (index < getCurrentIndex() ? 1.0 : 0.0),
-                        isActive: index == getCurrentIndex(),
-                        isCompleted: index < getCurrentIndex()
+                        progress: i == getCurrentIndex() ? currentStoryProgress : (i < getCurrentIndex() ? 1.0 : 0.0),
+                        isActive: i == getCurrentIndex(),
+                        isCompleted: i < getCurrentIndex()
                     )
                 }
             }
@@ -190,6 +192,7 @@ private extension StoryDetailView {
                 onDeleteTapped: { onDeleteTapped?(model.id) },
                 isPresented: $isPresented
             )
+            .drawingGroup() // ← forces rasterization, stops image blinking
         }
     }
     
