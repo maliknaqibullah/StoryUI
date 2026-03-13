@@ -12,4 +12,6 @@ extension NSNotification.Name {
     static let restartVideo = Notification.Name("restartVideo")
     static let replaceCurrentItem = Notification.Name("replaceCurrentItem")
     static let stopAndRestartVideo = Notification.Name("stopAndRestartVideo")
+    static let storyDeleteTapped = Notification.Name("storyDeleteTapped")
+
 }
