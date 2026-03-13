@@ -20,6 +20,8 @@ public struct StoryView: View {
     // Public properties
     let userClosure: UserCompletionHandler?
     let onUserChanged: ((String) -> Void)?          // ← ADD
+    let onDeleteTapped: ((String) -> Void)?      // ← ADD: fires with current userID
+    let myUserID: String?                         // ← ADD: to know which stories are mine
 
     
     /// Stories and isPresented required, selectedIndex is optional default: 0
@@ -32,14 +34,18 @@ public struct StoryView: View {
         selectedIndex: Int = 0,
         isPresented: Binding<Bool>,
         userClosure: UserCompletionHandler? = nil,
-        onUserChanged: ((String) -> Void)? = nil    // ← ADD
+        onUserChanged: ((String) -> Void)? = nil,    // ← ADD
+        onDeleteTapped: ((String) -> Void)? = nil,  // ← ADD
+        myUserID: String? = nil                      // ← ADD
 
     ) {
         self.stories = stories
         self.selectedIndex = selectedIndex
         self._isPresented = isPresented
         self.userClosure = userClosure
-        self.onUserChanged = onUserChanged           // ← ADD
+        self.onUserChanged = onUserChanged
+        self.onDeleteTapped = onDeleteTapped
+        self.myUserID = myUserID// ← ADD
 
     }
     
@@ -54,7 +60,9 @@ public struct StoryView: View {
                             model: model,
                             isPresented: $isPresented,
                             userClosure: userClosure,
-                            onUserChanged: onUserChanged   // ← ADD
+                            onUserChanged: onUserChanged,   // ← ADD
+                            onDeleteTapped: onDeleteTapped,  // ← ADD
+                            myUserID: myUserID               // ← ADD
 
                         )
                     }

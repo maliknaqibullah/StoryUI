@@ -22,7 +22,9 @@ struct StoryDetailView: View {
 
     let userClosure: UserCompletionHandler?
     let onUserChanged: ((String) -> Void)?    // ← ADD
-
+    let onDeleteTapped: ((String) -> Void)?
+    let myUserID: String?
+    
     
     // MARK: Private Properties
     @ObservedObject private var keyboardManager = KeyboardManager()
@@ -36,6 +38,9 @@ struct StoryDetailView: View {
     @State private var isTapDisabled: Bool = false
     @State private var showEmoji: Bool = true
 
+    private var isMyStory: Bool {
+          model.id == myUserID
+      }
     private var messageViewPosition: CGFloat {
         return -keyboardManager.currentHeight
     }
@@ -182,6 +187,30 @@ private extension StoryDetailView {
                 date: date,
                 isPresented: $isPresented
             )
+            // Delete button — only for my own stories
+                    if isMyStory {
+                        Spacer()
+                        Button(action: {
+                            onDeleteTapped?(model.id)
+                        }) {
+                            ZStack {
+                                if #available(iOS 15.0, *) {
+                                    Circle()
+                                        .fill(.ultraThinMaterial)
+                                        .frame(width: 36, height: 36)
+                                } else {
+                                    Circle()
+                                        .fill(Color.black.opacity(0.5))
+                                        .frame(width: 36, height: 36)
+                                }
+                                Image(systemName: "trash")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.4), radius: 2)
+                            }
+                        }
+                        .padding(.trailing, 52) // sit left of the X close button
+                    }
         }
     }
     
