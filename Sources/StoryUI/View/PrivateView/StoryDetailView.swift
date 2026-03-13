@@ -166,8 +166,8 @@ private extension StoryDetailView {
     
     @ViewBuilder
     func getUserInfoAndProgressBar(with index: Int) -> some View {
-        let date = getStory(with: index).date
-        let name = model.user.name
+        let date  = getStory(with: index).date
+        let name  = model.user.name
         let image = model.user.image
         VStack {
             HStack(spacing: Constant.progressBarSpacing) {
@@ -181,36 +181,15 @@ private extension StoryDetailView {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
+
             UserView(
                 image: image,
                 name: name,
                 date: date,
+                isMyStory: isMyStory,
+                onDeleteTapped: { onDeleteTapped?(model.id) },
                 isPresented: $isPresented
             )
-            // Delete button — only for my own stories
-                    if isMyStory {
-                        Spacer()
-                        Button(action: {
-                            onDeleteTapped?(model.id)
-                        }) {
-                            ZStack {
-                                if #available(iOS 15.0, *) {
-                                    Circle()
-                                        .fill(.ultraThinMaterial)
-                                        .frame(width: 36, height: 36)
-                                } else {
-                                    Circle()
-                                        .fill(Color.black.opacity(0.5))
-                                        .frame(width: 36, height: 36)
-                                }
-                                Image(systemName: "trash")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .shadow(color: .black.opacity(0.4), radius: 2)
-                            }
-                        }
-                        .padding(.trailing, 52) // sit left of the X close button
-                    }
         }
     }
     

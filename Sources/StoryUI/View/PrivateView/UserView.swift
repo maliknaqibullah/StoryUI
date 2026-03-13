@@ -12,11 +12,13 @@ struct UserView: View {
     var image: String
     var name: String
     var date: String
+    var isMyStory: Bool = false
+    var onDeleteTapped: (() -> Void)? = nil
     
     @Binding var isPresented: Bool
     
     var body: some View {
-        HStack(spacing: Constant.UserView.hStackSpace) {            
+        HStack(spacing: Constant.UserView.hStackSpace) {
             CacheAsyncImage(urlString: image)
             VStack(alignment: .leading) {
                 Text(name)
@@ -29,16 +31,25 @@ struct UserView: View {
             
             Spacer()
 
+            // Trash — only for my own stories
+            if isMyStory {
+                Image(systemName: "trash")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.white)
+                    .onTapGesture {
+                        onDeleteTapped?()
+                    }
+            }
+
             Image(systemName: "xmark")
-                .font(.title)
+                .font(.system(size: 18, weight: .medium))
                 .foregroundColor(.white)
+                .padding(.leading, 16)   // ← space between trash and xmark
                 .onTapGesture {
                     NotificationCenter.default.post(name: .replaceCurrentItem, object: nil)
                     isPresented = false
                 }
-
         }
         .padding(.horizontal)
     }
 }
-
