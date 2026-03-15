@@ -31,28 +31,27 @@ final class ImageLoader: UIView {
     }
     
     func loadImageWithUrl(_ url: String?, imageIsLoaded: @escaping () -> Void) {
+
         guard let validatedUrl = url else {
             print("url error")
             return
         }
 
         if imageURL == URL(string: validatedUrl) {
-            if let image = imageView.image {
-                // Already showing correct image
-                imageIsLoaded()
-                return
-            }
+            return
         }
 
         imageURL = URL(string: validatedUrl)
+
         guard let imageURL else { return }
 
         imageView.image = nil
+        // stop video if it's playing before image request
         NotificationCenter.default.post(name: .stopVideo, object: nil)
 
         if let cachedResponse = URLCache.shared.cachedResponse(for: .init(url: imageURL)) {
             DispatchQueue.main.async { [weak self] in
-                self?.imageView.image = UIImage(data: cachedResponse.data)
+                self?.imageView.image =  UIImage(data: cachedResponse.data)
                 imageIsLoaded()
             }
             return
@@ -68,6 +67,7 @@ final class ImageLoader: UIView {
                 print(error as Any)
                 return
             }
+
             guard let data,
                   let response,
                   let image = UIImage(data: data)
@@ -75,7 +75,7 @@ final class ImageLoader: UIView {
 
             URLCache.shared.storeCachedResponse(
                 .init(response: response, data: data),
-                for: .init(url: imageURL)
+                for: .init( url: imageURL)
             )
 
             DispatchQueue.main.async {
