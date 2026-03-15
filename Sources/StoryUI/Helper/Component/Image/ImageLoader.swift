@@ -31,6 +31,7 @@ final class ImageLoader: UIView {
     }
     
     func loadImageWithUrl(_ url: String?, imageIsLoaded: @escaping () -> Void) {
+        print("ImageLoader ▸ loadImageWithUrl called — url=\(url?.suffix(40) ?? "nil") currentImageURL=\(imageURL?.absoluteString.suffix(40) ?? "nil") hasImage=\(imageView.image != nil)")
 
         guard let validatedUrl = url else {
             print("url error")
