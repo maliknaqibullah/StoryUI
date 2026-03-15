@@ -116,7 +116,6 @@ private extension StoryDetailView {
             ImageView(imageURL: story.mediaURL) {
                 start(index: index)
             }
-            .id(story.id)
             .onAppear {
                 resetAVPlayer()
             }
@@ -363,14 +362,12 @@ private extension StoryDetailView {
         guard !isTapDisabled else { return }
         
         if (timerProgress + 1) > CGFloat(model.stories.count) {
+            // Next user
             updateStory()
         } else {
+            // Next story - reset progress for new story
             currentStoryProgress = 0
             timerProgress = CGFloat(Int(timerProgress + 1))
-            let targetIndex = Int(timerProgress)
-            if targetIndex < model.stories.count {
-                model.stories[targetIndex].isReady = false
-            }
         }
     }
 
@@ -379,17 +376,14 @@ private extension StoryDetailView {
         guard !isTapDisabled else { return }
         
         if (timerProgress - 1) < 0 {
+            // Previous user
             updateStory(direction: .previous)
         } else {
+            // Previous story - reset progress for new story
             currentStoryProgress = 0
             timerProgress = CGFloat(Int(timerProgress - 1))
-            let targetIndex = Int(timerProgress)
-            if targetIndex < model.stories.count {
-                model.stories[targetIndex].isReady = false
-            }
         }
     }
-    
     func start(index: Int) {
         if !model.stories[index].isReady {
             model.stories[index].isReady = true

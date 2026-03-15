@@ -37,8 +37,7 @@ final class ImageLoader: UIView {
             return
         }
 
-        if imageURL == URL(string: validatedUrl), imageView.image != nil {
-            imageIsLoaded()
+        if imageURL == URL(string: validatedUrl) {
             return
         }
 
