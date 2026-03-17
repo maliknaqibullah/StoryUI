@@ -12,7 +12,6 @@ struct UserView: View {
     var image: String
     var name: String
     var date: String
-    var title: String = ""
     var isMyStory: Bool = false
     
     @Binding var isPresented: Bool

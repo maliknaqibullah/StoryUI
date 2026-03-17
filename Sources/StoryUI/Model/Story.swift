@@ -15,13 +15,14 @@ public struct Story: Identifiable, Hashable {
     public var isLiked: Bool = false
     public var duration: Double = Constant.storySecond
     public var config: StoryConfiguration
-    
+    public var title: String?
     public init(id: String = UUID().uuidString,
                 mediaURL: String,
                 date: String,
                 isLiked: Bool = false,
                 duration: Double = 5,
-                config: StoryConfiguration) {
+                config: StoryConfiguration,
+                title: String? = nil) {
         
         self.id = id
         self.mediaURL = mediaURL
@@ -30,6 +31,7 @@ public struct Story: Identifiable, Hashable {
         self.config = config
         self.isLiked = isLiked
         Constant.storySecond = duration
+        self.title = title
     }
 }
 

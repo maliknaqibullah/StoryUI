@@ -207,7 +207,6 @@ private extension StoryDetailView {
                 image:     model.user.image,
                 name:      model.user.name,
                 date:      model.stories[safe: index]?.date ?? "",
-                title:     model.user.title ?? "",  
                 isMyStory: isMyStory,
                 isPresented: $isPresented
             )
