@@ -65,7 +65,7 @@ struct StoryDetailView: View {
                                         ? -Constant.MessageView.height : .zero
                                     )
                             )
-                        if let title = model.user.title, !title.isEmpty {
+                        if let title = story.title, !title.isEmpty {
                               HStack {
                                   Text(title)
                                       .font(.system(size: 20, weight: .semibold))
