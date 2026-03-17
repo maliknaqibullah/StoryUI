@@ -12,6 +12,7 @@ struct UserView: View {
     var image: String
     var name: String
     var date: String
+    var title: String = ""
     var isMyStory: Bool = false
     
     @Binding var isPresented: Bool
@@ -35,6 +36,8 @@ struct UserView: View {
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.white)
                     .padding(12)
+                    .background(Color.black.opacity(0.45))   // ✅ ADD
+                   .clipShape(Circle())
                     .contentShape(Rectangle())
                     .onTapGesture {
                         NotificationCenter.default.post(name: .storyDeleteTapped, object: nil)
@@ -45,6 +48,8 @@ struct UserView: View {
                 .font(.system(size: 18, weight: .medium))
                 .foregroundColor(.white)
                 .padding(12)
+                .background(Color.black.opacity(0.45))   // ✅ ADD
+               .clipShape(Circle())
                 .contentShape(Rectangle())
                 .onTapGesture {
                     NotificationCenter.default.post(name: .replaceCurrentItem, object: nil)

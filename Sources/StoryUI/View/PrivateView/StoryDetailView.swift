@@ -65,6 +65,25 @@ struct StoryDetailView: View {
                                         ? -Constant.MessageView.height : .zero
                                     )
                             )
+                        if let title = model.user.title, !title.isEmpty {
+                              HStack {
+                                  Text(title)
+                                      .font(.system(size: 20, weight: .semibold))
+                                      .foregroundColor(.white)
+                                      .multilineTextAlignment(.leading)
+                                      .lineLimit(2)
+                                      .padding(.horizontal, 16)
+                                      .padding(.vertical, 10)
+                              }
+                              .frame(maxWidth: .infinity, alignment: .leading)
+                              .background(
+                                  LinearGradient(
+                                      colors: [Color.black.opacity(0.0), Color.black.opacity(0.55)],
+                                      startPoint: .top,
+                                      endPoint: .bottom
+                                  )
+                              )
+                          }
                         messageView(with: index)
                     }
                 }
@@ -188,6 +207,7 @@ private extension StoryDetailView {
                 image: model.user.image,
                 name: model.user.name,
                 date: model.stories[safe: index]?.date ?? "",
+                title: "my amazing story",
                 isMyStory: isMyStory,
                 isPresented: $isPresented
             )
