@@ -23,8 +23,8 @@ public struct Story: Identifiable, Hashable {
                 isLiked: Bool = false,
                 duration: Double = 5,
                 config: StoryConfiguration,
-                viewCount: Int = 0,
-                title: String? = nil) {
+                title: String? = nil,
+                viewCount: Int = 0) {
         
         self.id = id
         self.mediaURL = mediaURL

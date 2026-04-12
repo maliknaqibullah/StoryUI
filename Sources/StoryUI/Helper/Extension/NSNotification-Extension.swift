@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension NSNotification.Name {
+public extension NSNotification.Name {
     static let stopVideo = Notification.Name("stopVideo")
     static let restartVideo = Notification.Name("restartVideo")
     static let replaceCurrentItem = Notification.Name("replaceCurrentItem")
