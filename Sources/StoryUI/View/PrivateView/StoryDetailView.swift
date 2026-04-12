@@ -66,24 +66,75 @@ struct StoryDetailView: View {
                                     )
                             )
                         if let title = story.title, !title.isEmpty {
-                              HStack {
-                                  Text(title)
-                                      .font(.system(size: 20, weight: .semibold))
-                                      .foregroundColor(.white)
-                                      .multilineTextAlignment(.leading)
-                                      .lineLimit(2)
-                                      .padding(.horizontal, 16)
-                                      .padding(.vertical, 10)
-                              }
-                              .frame(maxWidth: .infinity, alignment: .leading)
-                              .background(
-                                  LinearGradient(
-                                      colors: [Color.black.opacity(0.0), Color.black.opacity(0.55)],
-                                      startPoint: .top,
-                                      endPoint: .bottom
-                                  )
-                              )
-                          }
+                            HStack(alignment: .center, spacing: 8) {
+                                Text(title)
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.leading)
+                                    .lineLimit(2)
+                         
+                                Spacer()
+                         
+                                // Eye badge — only visible on my own stories
+                                if isMyStory {
+                                    Button(action: {
+                                        NotificationCenter.default.post(
+                                            name: .storyViewersTapped,
+                                            object: story.id    // passes story ID to the sheet
+                                        )
+                                    }) {
+                                        if #available(iOS 15.0, *) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "eye.fill")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    Text("\(story.viewCount)")
+                                                        .font(.system(size: 12, weight: .bold))
+                                                        .monospacedDigit()
+                                             
+                                            }
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(.ultraThinMaterial)
+                                            .clipShape(Capsule())
+                                            .overlay(
+                                                Capsule().stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                                            )
+                                        }
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.black.opacity(0.0), Color.black.opacity(0.55)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                        }
+//                        if let title = story.title, !title.isEmpty {
+//                              HStack {
+//                                  Text(title)
+//                                      .font(.system(size: 20, weight: .semibold))
+//                                      .foregroundColor(.white)
+//                                      .multilineTextAlignment(.leading)
+//                                      .lineLimit(2)
+//                                      .padding(.horizontal, 16)
+//                                      .padding(.vertical, 10)
+//                              }
+//                              .frame(maxWidth: .infinity, alignment: .leading)
+//                              .background(
+//                                  LinearGradient(
+//                                      colors: [Color.black.opacity(0.0), Color.black.opacity(0.55)],
+//                                      startPoint: .top,
+//                                      endPoint: .bottom
+//                                  )
+//                              )
+//                          }
                         messageView(with: index)
                     }
                 }
