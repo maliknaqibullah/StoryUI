@@ -108,11 +108,13 @@ struct StoryDetailView: View {
 
                         // ✅ Message bar with solid background
                         messageView(with: index)
-                            .padding(.horizontal)
-                            .padding(.bottom, 8)
-                            .background(Color.black)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                            .glassBackground()
                             .animation(messageViewPosition == 0 ? .none : .easeOut)
                             .offset(y: messageViewPosition)
+            
                     }
 
                     getEmojiView(story: story)
@@ -508,5 +510,16 @@ private extension StoryDetailView {
 private extension Array {
     subscript(safe index: Int) -> Element? {
         indices.contains(index) ? self[index] : nil
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func glassBackground() -> some View {
+        if #available(iOS 15.0, *) {
+            self.background(.ultraThinMaterial)
+        } else {
+            self.background(Color.black.opacity(0.6))
+        }
     }
 }
