@@ -55,7 +55,6 @@ struct StoryDetailView: View {
             let story = model.stories[index]
             ZStack {
                 if model.stories.count > index {
-                    // ✅ Image fills full frame
                     getStoryView(with: index, story: story)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .ignoresSafeArea()
