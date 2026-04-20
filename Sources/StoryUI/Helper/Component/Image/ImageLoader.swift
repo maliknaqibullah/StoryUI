@@ -88,13 +88,13 @@ final class ImageLoader: UIView {
 }
 // MARK: - Private Funcs
 private extension ImageLoader {
-   func setupImageView() {
-       self.addSubview(imageView)
-       imageView.contentMode = .scaleAspectFit  
-       imageView.backgroundColor = .black
-       imageView.layer.cornerRadius = 12
-       imageView.clipsToBounds = true
-   }
+     func setupImageView() {
+        self.addSubview(imageView)
+        imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = .black
+        imageView.layer.cornerRadius = 0
+        imageView.clipsToBounds = false
+    }
 }
 // MARK: - Const funcs
 extension ImageLoader {
