@@ -517,9 +517,9 @@ extension View {
     @ViewBuilder
     func glassBackground() -> some View {
         if #available(iOS 15.0, *) {
-            self.background(.ultraThinMaterial)
+            self.background(.ultraThinMaterial.opacity(0.7))
         } else {
-            self.background(Color.black.opacity(0.6))
+            self.background(Color.black.opacity(0.3))
         }
     }
 }
