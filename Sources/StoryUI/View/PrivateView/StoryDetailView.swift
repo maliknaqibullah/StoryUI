@@ -50,21 +50,24 @@ struct StoryDetailView: View {
     }
     
     var body: some View {
-        
         GeometryReader { proxy in
             let index = getCurrentIndex()
             let story = model.stories[index]
             ZStack {
                 if model.stories.count > index {
+                    // ✅ Image fills full frame
                     getStoryView(with: index, story: story)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .ignoresSafeArea()
 
+                    // ✅ Tap overlay on top of full image
                     tapStory()
 
-                    if let title = story.title, !title.isEmpty {
-                        VStack {
-                            Spacer()
+                    // ✅ All UI overlaid at bottom
+                    VStack {
+                        Spacer()
+
+                        if let title = story.title, !title.isEmpty {
                             HStack(alignment: .center, spacing: 8) {
                                 Text(title)
                                     .font(.system(size: 20, weight: .semibold))
@@ -110,22 +113,15 @@ struct StoryDetailView: View {
                                     endPoint: .bottom
                                 )
                             )
+                        }
 
-                            // ✅ Message bar at very bottom
-                            messageView(with: index)
-                                .padding()
-                                .animation(messageViewPosition == 0 ? .none : .easeOut)
-                                .offset(y: messageViewPosition)
-                        }
-                    } else {
-                        // No title — just message bar at bottom
-                        VStack {
-                            Spacer()
-                            messageView(with: index)
-                                .padding()
-                                .animation(messageViewPosition == 0 ? .none : .easeOut)
-                                .offset(y: messageViewPosition)
-                        }
+                        // ✅ Message bar with solid background
+                        messageView(with: index)
+                            .padding(.horizontal)
+                            .padding(.bottom, 8)
+                            .background(Color.black)
+                            .animation(messageViewPosition == 0 ? .none : .easeOut)
+                            .offset(y: messageViewPosition)
                     }
 
                     getEmojiView(story: story)
@@ -145,12 +141,11 @@ struct StoryDetailView: View {
         }
         .onChange(of: viewModel.currentStoryUser) { newValue in
             NotificationCenter.default.post(name: .stopVideo, object: nil)
-            currentStoryProgress = 0 // Add this line
-            timerProgress = 0 // Add this line
+            currentStoryProgress = 0
+            timerProgress = 0
             resetProgress()
             playVideo()
-            onUserChanged?(newValue)          // ← ADD this one line
-
+            onUserChanged?(newValue)
         }
         .onReceive(timer) { _ in
             startProgress()
@@ -162,7 +157,7 @@ struct StoryDetailView: View {
         .onReceive(NotificationCenter.default.publisher(for: .storyDeleteTapped)) { _ in
             guard isMyStory else { return }
             let currentStoryID = model.stories[safe: getCurrentIndex()]?.id ?? ""
-            onDeleteTapped?(currentStoryID)   // ← pass story ID not model ID
+            onDeleteTapped?(currentStoryID)
         }
     }
 }
