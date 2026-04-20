@@ -56,41 +56,36 @@ struct StoryDetailView: View {
             let story = model.stories[index]
             ZStack {
                 if model.stories.count > index {
-                    VStack(spacing: 8) {
-                        getStoryView(with: index, story: story)
-                            .overlay(
-                                tapStory()
-                                    .offset(
-                                        y: story.config.storyType != .plain()
-                                        ? -Constant.MessageView.height : .zero
-                                    )
-                            )
-                        if let title = story.title, !title.isEmpty {
+                    getStoryView(with: index, story: story)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .ignoresSafeArea()
+
+                    tapStory()
+
+                    if let title = story.title, !title.isEmpty {
+                        VStack {
+                            Spacer()
                             HStack(alignment: .center, spacing: 8) {
                                 Text(title)
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.leading)
                                     .lineLimit(2)
-                         
                                 Spacer()
-                         
-                                // Eye badge — only visible on my own stories
                                 if isMyStory {
                                     Button(action: {
                                         NotificationCenter.default.post(
                                             name: .storyViewersTapped,
-                                            object: story.id    // passes story ID to the sheet
+                                            object: story.id
                                         )
                                     }) {
                                         if #available(iOS 15.0, *) {
                                             HStack(spacing: 4) {
                                                 Image(systemName: "eye.fill")
                                                     .font(.system(size: 12, weight: .semibold))
-                                                    Text("\(story.viewCount)")
-                                                        .font(.system(size: 12, weight: .bold))
-                                                        .monospacedDigit()
-                                             
+                                                Text("\(story.viewCount)")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .monospacedDigit()
                                             }
                                             .foregroundColor(.white)
                                             .padding(.horizontal, 10)
@@ -115,35 +110,31 @@ struct StoryDetailView: View {
                                     endPoint: .bottom
                                 )
                             )
+
+                            // ✅ Message bar at very bottom
+                            messageView(with: index)
+                                .padding()
+                                .animation(messageViewPosition == 0 ? .none : .easeOut)
+                                .offset(y: messageViewPosition)
                         }
-//                        if let title = story.title, !title.isEmpty {
-//                              HStack {
-//                                  Text(title)
-//                                      .font(.system(size: 20, weight: .semibold))
-//                                      .foregroundColor(.white)
-//                                      .multilineTextAlignment(.leading)
-//                                      .lineLimit(2)
-//                                      .padding(.horizontal, 16)
-//                                      .padding(.vertical, 10)
-//                              }
-//                              .frame(maxWidth: .infinity, alignment: .leading)
-//                              .background(
-//                                  LinearGradient(
-//                                      colors: [Color.black.opacity(0.0), Color.black.opacity(0.55)],
-//                                      startPoint: .top,
-//                                      endPoint: .bottom
-//                                  )
-//                              )
-//                          }
-                        messageView(with: index)
+                    } else {
+                        // No title — just message bar at bottom
+                        VStack {
+                            Spacer()
+                            messageView(with: index)
+                                .padding()
+                                .animation(messageViewPosition == 0 ? .none : .easeOut)
+                                .offset(y: messageViewPosition)
+                        }
                     }
+
+                    getEmojiView(story: story)
                 }
-                getEmojiView(story: story)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .overlay(
-                getUserInfoAndProgressBar(with: index)
-                ,alignment: .top
+                getUserInfoAndProgressBar(with: index),
+                alignment: .top
             )
             .rotation3DEffect(
                 getAngle(proxy: proxy),
