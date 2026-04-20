@@ -103,13 +103,7 @@ struct StoryDetailView: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .frame(maxWidth: .infinity)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.black.opacity(0.0), Color.black.opacity(0.55)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+              
                         }
 
                         // ✅ Message bar with solid background
