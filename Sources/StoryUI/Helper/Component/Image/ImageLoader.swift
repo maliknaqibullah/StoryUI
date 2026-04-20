@@ -90,6 +90,8 @@ final class ImageLoader: UIView {
 private extension ImageLoader {
    func setupImageView() {
        self.addSubview(imageView)
+       imageView.contentMode = .scaleAspectFit  
+       imageView.backgroundColor = .black
        imageView.layer.cornerRadius = 12
        imageView.clipsToBounds = true
    }

@@ -60,10 +60,8 @@ struct StoryDetailView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .ignoresSafeArea()
 
-                    // ✅ Tap overlay on top of full image
                     tapStory()
 
-                    // ✅ All UI overlaid at bottom
                     VStack {
                         Spacer()
 
