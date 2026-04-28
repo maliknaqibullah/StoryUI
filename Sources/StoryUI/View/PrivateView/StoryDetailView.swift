@@ -65,12 +65,13 @@ struct StoryDetailView: View {
                         LinearGradient(
                             gradient: Gradient(colors: [
                                 Color.black.opacity(0.0),
-                                Color.black.opacity(0.6)
+                                Color.black.opacity(0.5),
+                                Color.black.opacity(0.9)
                             ]),
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .frame(height: 200)
+                        .frame(height: 280)
                         .allowsHitTesting(false)
                     }
                     .ignoresSafeArea(edges: .bottom)
@@ -249,13 +250,14 @@ private extension StoryDetailView {
             // ← ADD THIS: dark gradient behind top controls
             LinearGradient(
                 gradient: Gradient(colors: [
-                    Color.black.opacity(0.55),
+                    Color.black.opacity(0.85),
+                    Color.black.opacity(0.5),
                     Color.black.opacity(0.0)
                 ]),
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: 140)
+            .frame(height: 180)
             .ignoresSafeArea(edges: .top)
             .allowsHitTesting(false)
 
