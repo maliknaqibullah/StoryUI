@@ -78,13 +78,15 @@ struct StoryDetailView: View {
                     VStack {
                         Spacer()
 
-                        if let title = story.title, !title.isEmpty, !title.hasPrefix("Story 20") {
+                        if let title = story.title {
                             HStack(alignment: .center, spacing: 8) {
-                                Text(title)
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .shadow(color: .black.opacity(0.7), radius: 4, x: 0, y: 2) // ← ADD
-                                    .multilineTextAlignment(.leading)
+                                if !title.isEmpty, !title.hasPrefix("Story 20") {
+                                    Text(title)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.7), radius: 4, x: 0, y: 2) // ← ADD
+                                        .multilineTextAlignment(.leading)
+                                }
                                 Spacer()
                                 if isMyStory {
                                     Button(action: {
