@@ -12,7 +12,13 @@ final class ImageLoader: UIView {
     
     // MARK: Public Properties
     var imageURL: URL?
-    var imageView = UIImageView()
+    var imageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFit
+        iv.layer.cornerRadius = 12
+        iv.clipsToBounds = true
+        return iv
+    }()
     let activityIndicator = UIActivityIndicatorView(style: .large)
     
      // MARK: - Initializers
@@ -88,11 +94,9 @@ final class ImageLoader: UIView {
 }
 // MARK: - Private Funcs
 private extension ImageLoader {
-   func setupImageView() {
-       self.addSubview(imageView)
-       imageView.layer.cornerRadius = 12
-       imageView.clipsToBounds = true
-   }
+    func setupImageView() {
+        self.addSubview(imageView)
+    }
 }
 // MARK: - Const funcs
 extension ImageLoader {
