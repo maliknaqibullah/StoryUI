@@ -78,8 +78,7 @@ struct StoryDetailView: View {
                     VStack {
                         Spacer()
 
-                        if let title = story.title, !title.isEmpty,
-                           ISO8601DateFormatter().date(from: title.replacingOccurrences(of: "Story ", with: "").trimmingCharacters(in: .whitespaces)) == nil {
+                        if let title = story.title, !title.isEmpty, !title.hasPrefix("Story 20") {
                             HStack(alignment: .center, spacing: 8) {
                                 Text(title)
                                     .font(.system(size: 20, weight: .semibold))
