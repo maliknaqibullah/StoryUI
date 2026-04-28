@@ -12,8 +12,8 @@ public struct StoryView: View {
     
     @StateObject private var viewModel = StoryViewModel()
     @Binding private var isPresented: Bool
-    @State private var isPaused: Bool = false  // ← ADD
-    
+    @Binding private var isPaused: Bool      // ← CHANGE from @State to @Binding
+
     private var stories: [StoryUIModel]
     private var selectedIndex: Int
     let userClosure: UserCompletionHandler?
@@ -25,6 +25,7 @@ public struct StoryView: View {
         stories: [StoryUIModel],
         selectedIndex: Int = 0,
         isPresented: Binding<Bool>,
+        isPaused: Binding<Bool> = .constant(false),  // ← ADD with default so existing callers don't break
         userClosure: UserCompletionHandler? = nil,
         onUserChanged: ((String) -> Void)? = nil,
         onDeleteTapped: ((String) -> Void)? = nil,
@@ -33,12 +34,12 @@ public struct StoryView: View {
         self.stories = stories
         self.selectedIndex = selectedIndex
         self._isPresented = isPresented
+        self._isPaused = isPaused            // ← ADD
         self.userClosure = userClosure
         self.onUserChanged = onUserChanged
         self.onDeleteTapped = onDeleteTapped
         self.myUserID = myUserID
     }
-    
     public var body: some View {
         if isPresented {
             ZStack {
