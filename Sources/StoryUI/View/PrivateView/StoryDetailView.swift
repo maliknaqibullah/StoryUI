@@ -60,7 +60,20 @@ struct StoryDetailView: View {
                         .ignoresSafeArea()
 
                     tapStory()
-
+                    VStack {
+                        Spacer()
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.black.opacity(0.0),
+                                Color.black.opacity(0.6)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 200)
+                        .allowsHitTesting(false)
+                    }
+                    .ignoresSafeArea(edges: .bottom)
                     VStack {
                         Spacer()
 
@@ -69,8 +82,8 @@ struct StoryDetailView: View {
                                 Text(title)
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.7), radius: 4, x: 0, y: 2) // ← ADD
                                     .multilineTextAlignment(.leading)
-                                    .lineLimit(2)
                                 Spacer()
                                 if isMyStory {
                                     Button(action: {
@@ -132,6 +145,13 @@ struct StoryDetailView: View {
                 perspective: 2.5
             )
         }
+        .onChange(of: keyboardManager.isKeyboardOpen) { isOpen in
+            if isOpen {
+                pauseStory()
+            } else {
+                resumeStory()
+            }
+        }
         .onChange(of: viewModel.currentStoryUser) { newValue in
             NotificationCenter.default.post(name: .stopVideo, object: nil)
             currentStoryProgress = 0
@@ -149,8 +169,13 @@ struct StoryDetailView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .storyDeleteTapped)) { _ in
             guard isMyStory else { return }
+            pauseStory() // ← ADD: pause when delete sheet opens
             let currentStoryID = model.stories[safe: getCurrentIndex()]?.id ?? ""
             onDeleteTapped?(currentStoryID)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .storyDeleteCancelled)) { _ in
+            guard isMyStory else { return }
+            resumeStory()
         }
     }
 }
@@ -220,28 +245,44 @@ private extension StoryDetailView {
     
     @ViewBuilder
     func getUserInfoAndProgressBar(with index: Int) -> some View {
-        VStack {
-            HStack(spacing: Constant.progressBarSpacing) {
-                ForEach(model.stories.indices) { i in
-                    ProgressBarView(
-                        progress: i == getCurrentIndex() ? currentStoryProgress : (i < getCurrentIndex() ? 1.0 : 0.0),
-                        isActive: i == getCurrentIndex(),
-                        isCompleted: i < getCurrentIndex()
-                    )
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-
-            UserView(
-                image:     model.user.image,
-                name:      model.user.name,
-                date:      model.stories[safe: index]?.date ?? "",
-                isMyStory: isMyStory,
-                isPresented: $isPresented
+        ZStack(alignment: .top) {
+            // ← ADD THIS: dark gradient behind top controls
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.black.opacity(0.55),
+                    Color.black.opacity(0.0)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
             )
+            .frame(height: 140)
+            .ignoresSafeArea(edges: .top)
+            .allowsHitTesting(false)
+
+            VStack {
+                HStack(spacing: Constant.progressBarSpacing) {
+                    ForEach(model.stories.indices) { i in
+                        ProgressBarView(
+                            progress: i == getCurrentIndex() ? currentStoryProgress : (i < getCurrentIndex() ? 1.0 : 0.0),
+                            isActive: i == getCurrentIndex(),
+                            isCompleted: i < getCurrentIndex()
+                        )
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+
+                UserView(
+                    image:     model.user.image,
+                    name:      model.user.name,
+                    date:      model.stories[safe: index]?.date ?? "",
+                    isMyStory: isMyStory,
+                    isPresented: $isPresented
+                )
+            }
         }
     }
+    
     @ViewBuilder
     func messageView(with index: Int) -> some View {
         let story = getStory(with: index)
