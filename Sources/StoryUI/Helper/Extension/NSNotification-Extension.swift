@@ -15,5 +15,5 @@ public extension NSNotification.Name {
     static let storyDeleteTapped = Notification.Name("storyDeleteTapped")
     static let storyViewersTapped = Notification.Name("storyViewersTapped")
     static let storyDeleteCancelled = Notification.Name("storyDeleteCancelled")
-
+    static let storyPaused = Notification.Name("storyPaused")
 }

@@ -12,32 +12,23 @@ public struct StoryView: View {
     
     @StateObject private var viewModel = StoryViewModel()
     @Binding private var isPresented: Bool
+    @State private var isPaused: Bool = false  // ← ADD
     
-    // Private properties
     private var stories: [StoryUIModel]
     private var selectedIndex: Int
- 
-    // Public properties
     let userClosure: UserCompletionHandler?
-    let onUserChanged: ((String) -> Void)?          // ← ADD
-    let onDeleteTapped: ((String) -> Void)?      // ← ADD: fires with current userID
-    let myUserID: String?                         // ← ADD: to know which stories are mine
+    let onUserChanged: ((String) -> Void)?
+    let onDeleteTapped: ((String) -> Void)?
+    let myUserID: String?
 
-    
-    /// Stories and isPresented required, selectedIndex is optional default: 0
-    /// - Parameters:
-    ///   - stories: all stories to show
-    ///   - selectedIndex: current story index selected by user
-    ///   - isPresented: to hide and show for closing storyView
     public init(
         stories: [StoryUIModel],
         selectedIndex: Int = 0,
         isPresented: Binding<Bool>,
         userClosure: UserCompletionHandler? = nil,
-        onUserChanged: ((String) -> Void)? = nil,    // ← ADD
-        onDeleteTapped: ((String) -> Void)? = nil,  // ← ADD
-        myUserID: String? = nil                      // ← ADD
-
+        onUserChanged: ((String) -> Void)? = nil,
+        onDeleteTapped: ((String) -> Void)? = nil,
+        myUserID: String? = nil
     ) {
         self.stories = stories
         self.selectedIndex = selectedIndex
@@ -45,8 +36,7 @@ public struct StoryView: View {
         self.userClosure = userClosure
         self.onUserChanged = onUserChanged
         self.onDeleteTapped = onDeleteTapped
-        self.myUserID = myUserID// ← ADD
-
+        self.myUserID = myUserID
     }
     
     public var body: some View {
@@ -59,11 +49,11 @@ public struct StoryView: View {
                             viewModel: viewModel,
                             model: model,
                             isPresented: $isPresented,
+                            isPaused: $isPaused,         // ← ADD
                             userClosure: userClosure,
-                            onUserChanged: onUserChanged,   // ← ADD
-                            onDeleteTapped: onDeleteTapped,  // ← ADD
-                            myUserID: myUserID               // ← ADD
-
+                            onUserChanged: onUserChanged,
+                            onDeleteTapped: onDeleteTapped,
+                            myUserID: myUserID
                         )
                     }
                 }
@@ -71,27 +61,22 @@ public struct StoryView: View {
             .ignoresSafeArea(.keyboard, edges: .bottom)
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onAppear() {
+            .onAppear {
                 startStory()
-                onUserChanged?(stories[selectedIndex < stories.count ? selectedIndex : 0].id) // ← ADD
-
+                onUserChanged?(stories[selectedIndex < stories.count ? selectedIndex : 0].id)
             }
-            .onDisappear() {
-               stopVideo()
+            .onDisappear {
+                stopVideo()
             }
         }
     }
     
     private func startStory() {
         guard !stories.isEmpty else { return }
-
         viewModel.stories = stories
-
         let index = stories.indices.contains(selectedIndex) ? selectedIndex : .zero
         let storyUser = stories[index]
-
         viewModel.currentStoryUser = storyUser.id
-
         if !storyUser.stories.isEmpty {
             viewModel.stories[index].isSeen = true
         }

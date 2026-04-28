@@ -18,7 +18,7 @@ struct StoryDetailView: View {
     @State var timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
     @State var timerProgress: CGFloat = 0
     @State var currentStoryProgress: CGFloat = 0
-    @State private var isPaused: Bool = false
+    @Binding var isPaused: Bool
 
     let userClosure: UserCompletionHandler?
     let onUserChanged: ((String) -> Void)?    // ← ADD
@@ -170,15 +170,21 @@ struct StoryDetailView: View {
             configureProgress(with: state)
             isTimerRunning = state
         }
+        .onChange(of: isPaused) { paused in
+            if paused {
+                if model.stories[getCurrentIndex()].config.mediaType == .video {
+                    player.pause()
+                }
+            } else {
+                if model.stories[getCurrentIndex()].config.mediaType == .video {
+                    player.play()
+                }
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .storyDeleteTapped)) { _ in
             guard isMyStory else { return }
-            pauseStory() // ← ADD: pause when delete sheet opens
             let currentStoryID = model.stories[safe: getCurrentIndex()]?.id ?? ""
             onDeleteTapped?(currentStoryID)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .storyDeleteCancelled)) { _ in
-            guard isMyStory else { return }
-            resumeStory()
         }
     }
 }
