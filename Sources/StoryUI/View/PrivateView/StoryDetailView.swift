@@ -78,7 +78,8 @@ struct StoryDetailView: View {
                     VStack {
                         Spacer()
 
-                        if let title = story.title, !title.isEmpty {
+                        if let title = story.title, !title.isEmpty,
+                           ISO8601DateFormatter().date(from: title.replacingOccurrences(of: "Story ", with: "").trimmingCharacters(in: .whitespaces)) == nil {
                             HStack(alignment: .center, spacing: 8) {
                                 Text(title)
                                     .font(.system(size: 20, weight: .semibold))
@@ -120,18 +121,18 @@ struct StoryDetailView: View {
               
                         }
 
-                        // ✅ Message bar with solid background
-                        messageView(with: index)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .frame(maxWidth: .infinity)
-                            .glassBackground()
-                            .animation(messageViewPosition == 0 ? .none : .easeOut)
-                            .offset(y: messageViewPosition)
+                        if !isMyStory {
+                            messageView(with: index)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity)
+                                .glassBackground()
+                                .animation(messageViewPosition == 0 ? .none : .easeOut)
+                                .offset(y: messageViewPosition)
+                        }
             
                     }
 
-                    getEmojiView(story: story)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -210,39 +211,7 @@ private extension StoryDetailView {
         }
     }
     
-    @ViewBuilder
-    func getEmojiView(story: Story) -> some View {
-        let index = getCurrentIndex()
-        switch story.config.storyType {
-        case .message(_, let emojis, _):
-            if let emojis, showEmoji {
-                VStack {
-                    Spacer()
-                    EmojiView(
-                        story: getStory(with: index),
-                        emojiArray: emojis,
-                        startAnimating: $startAnimate,
-                        selectedEmoji: $selectedEmoji,
-                        userClosure: userClosure
-                    )
-                    .animation(messageViewPosition == 0 ? .none : .easeOut)
-                    .offset(y: emojiViewPosition)
-                    .opacity(messageViewPosition == 0 ? 0 : 1)
-                }
-                
-                if startAnimate {
-                    EmojiReactionView(
-                        dissmis: $startAnimate,
-                        isAnimationStarted: $isAnimationStarted,
-                        emoji: selectedEmoji
-                    )
-                }
-                
-            }
-        case .plain:
-            Divider()
-        }
-    }
+
     
     @ViewBuilder
     func getUserInfoAndProgressBar(with index: Int) -> some View {
