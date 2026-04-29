@@ -2,7 +2,7 @@
 //  SwiftUIView.swift
 //
 //
-//  Created by Tolga İskender on 3.06.2023.
+//  Created by Naqibullah Malikzada on 3.06.2023.
 //
 
 import SwiftUI

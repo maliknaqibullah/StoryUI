@@ -2,7 +2,7 @@
 //  VideoView.swift
 //  StoryUI
 //
-//  Created by Tolga İskender on 31.03.2022.
+//  Created by Naqibullah Malikzada on 31.03.2022.
 //
 
 import SwiftUI

@@ -2,7 +2,7 @@
 //  File.swift
 //  
 //
-//  Created by Tolga İskender on 1.05.2022.
+//  Created by Naqibullah Malikzada on 1.05.2022.
 //
 
 import Foundation

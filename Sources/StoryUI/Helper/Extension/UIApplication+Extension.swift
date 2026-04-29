@@ -2,7 +2,7 @@
 //  UIApplication.swift
 //  
 //
-//  Created by Tolga İskender on 4.06.2023.
+//  Created by Naqibullah Malikzada on 4.06.2023.
 //
 
 import Foundation

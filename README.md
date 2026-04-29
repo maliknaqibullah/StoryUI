@@ -29,7 +29,7 @@ struct ContentView: View {
     @State var stories: [StoryUIModel] = [
         .init(
             user: .init(
-                name: "Tolga İskender",
+                name: "Naqibullah Malikzada",
                 image: "https://image.tmdb.org/t/p/original/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
             ),
             stories: [

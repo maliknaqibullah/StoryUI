@@ -2,7 +2,7 @@
 //  StoryViewModel.swift
 //  StoryUI (iOS)
 //
-//  Created by Tolga İskender on 28.04.2022.
+//  Created by Naqibullah Malikzada on 28.04.2022.
 //
 
 import Foundation

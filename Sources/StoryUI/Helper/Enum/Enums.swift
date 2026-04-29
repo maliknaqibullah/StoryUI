@@ -2,7 +2,7 @@
 //  Enums.swift
 //  StoryUI
 //
-//  Created by Tolga İskender on 28.03.2022.
+//  Created by Naqibullah Malikzada on 28.03.2022.
 //
 
 import Foundation

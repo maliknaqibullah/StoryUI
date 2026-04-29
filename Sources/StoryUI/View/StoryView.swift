@@ -2,7 +2,7 @@
 //  StoryView.swift
 //  StoryUI (iOS)
 //
-//  Created by Tolga İskender on 28.04.2022.
+//  Created by Naqibullah Malikzada on 28.04.2022.
 //
 
 import SwiftUI
@@ -12,7 +12,7 @@ public struct StoryView: View {
     
     @StateObject private var viewModel = StoryViewModel()
     @Binding private var isPresented: Bool
-    @Binding private var isPaused: Bool      // ← CHANGE from @State to @Binding
+    @Binding private var isPaused: Bool
 
     private var stories: [StoryUIModel]
     private var selectedIndex: Int
@@ -25,7 +25,7 @@ public struct StoryView: View {
         stories: [StoryUIModel],
         selectedIndex: Int = 0,
         isPresented: Binding<Bool>,
-        isPaused: Binding<Bool> = .constant(false),  // ← ADD with default so existing callers don't break
+        isPaused: Binding<Bool> = .constant(false),
         userClosure: UserCompletionHandler? = nil,
         onUserChanged: ((String) -> Void)? = nil,
         onDeleteTapped: ((String) -> Void)? = nil,
@@ -34,7 +34,7 @@ public struct StoryView: View {
         self.stories = stories
         self.selectedIndex = selectedIndex
         self._isPresented = isPresented
-        self._isPaused = isPaused            // ← ADD
+        self._isPaused = isPaused
         self.userClosure = userClosure
         self.onUserChanged = onUserChanged
         self.onDeleteTapped = onDeleteTapped
@@ -50,7 +50,7 @@ public struct StoryView: View {
                             viewModel: viewModel,
                             model: model,
                             isPresented: $isPresented,
-                            isPaused: $isPaused,         // ← ADD
+                            isPaused: $isPaused,
                             userClosure: userClosure,
                             onUserChanged: onUserChanged,
                             onDeleteTapped: onDeleteTapped,

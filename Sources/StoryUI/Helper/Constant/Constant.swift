@@ -2,7 +2,7 @@
 //  Constant.swift
 //  StoryUI (iOS)
 //
-//  Created by Tolga İskender on 29.04.2022.
+//  Created by Naqibullah Malikzada on 29.04.2022.
 //
 
 import Foundation

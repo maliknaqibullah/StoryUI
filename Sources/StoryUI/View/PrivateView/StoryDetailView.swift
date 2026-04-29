@@ -2,7 +2,7 @@
 //  SwiftUIView.swift
 //
 //
-//  Created by Tolga İskender on 1.05.2022.
+//  Created by Naqibullah Malikzada on 1.05.2022.
 //
 
 import SwiftUI
@@ -54,6 +54,8 @@ struct StoryDetailView: View {
             let index = getCurrentIndex()
             let story = model.stories[index]
             ZStack {
+                Color.black
+                       .ignoresSafeArea()
                 if model.stories.count > index {
                     getStoryView(with: index, story: story)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

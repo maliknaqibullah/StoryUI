@@ -2,7 +2,7 @@
 //  StoryConfiguration.swift
 //  
 //
-//  Created by Tolga İskender on 11.06.2023.
+//  Created by Naqibullah Malikzada on 11.06.2023.
 //
 
 import Foundation
