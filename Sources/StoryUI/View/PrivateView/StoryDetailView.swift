@@ -143,12 +143,8 @@ struct StoryDetailView: View {
                 getUserInfoAndProgressBar(with: index),
                 alignment: .top
             )
-            .rotation3DEffect(
-                getAngle(proxy: proxy),
-                axis: (x: 0, y: 1, z: 0),
-                anchor: proxy.frame(in: .global).minX > 0 ? .leading : .trailing,
-                perspective: 1.0
-            )
+  
+            
         }
         .onChange(of: keyboardManager.isKeyboardOpen) { isOpen in
             if isOpen {
