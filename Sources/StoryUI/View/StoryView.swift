@@ -44,23 +44,18 @@ public struct StoryView: View {
         if isPresented {
             ZStack {
                 Color.black.ignoresSafeArea()
-                TabView(selection: $viewModel.currentStoryUser) {
-                    ForEach(viewModel.stories) { model in
-                        StoryDetailView(
-                            viewModel: viewModel,
-                            model: model,
-                            isPresented: $isPresented,
-                            isPaused: $isPaused,
-                            userClosure: userClosure,
-                            onUserChanged: onUserChanged,
-                            onDeleteTapped: onDeleteTapped,
-                            myUserID: myUserID
-                        )
-                    }
-                }
+                // ← Replace TabView with this:
+                PageCurlStoryContainer(
+                    viewModel: viewModel,
+                    isPresented: $isPresented,
+                    isPaused: $isPaused,
+                    userClosure: userClosure,
+                    onUserChanged: onUserChanged,
+                    onDeleteTapped: onDeleteTapped,
+                    myUserID: myUserID
+                )
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
-            .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 startStory()
