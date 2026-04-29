@@ -57,7 +57,7 @@ public struct StoryView: View {
                             myUserID: myUserID
                         )
                     }
-                }
+                }.tabViewStyle(.page)
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
             .tabViewStyle(.page(indexDisplayMode: .never))
