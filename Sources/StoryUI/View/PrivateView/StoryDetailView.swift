@@ -147,7 +147,7 @@ struct StoryDetailView: View {
                 getAngle(proxy: proxy),
                 axis: (x: 0, y: 1, z: 0),
                 anchor: proxy.frame(in: .global).minX > 0 ? .leading : .trailing,
-                perspective: 2.5
+                perspective: 1.0
             )
         }
         .onChange(of: keyboardManager.isKeyboardOpen) { isOpen in
