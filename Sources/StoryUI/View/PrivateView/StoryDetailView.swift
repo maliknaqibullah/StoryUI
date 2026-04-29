@@ -143,7 +143,8 @@ struct StoryDetailView: View {
                 getUserInfoAndProgressBar(with: index),
                 alignment: .top
             )
-  
+            .modifier(PageFlipModifier(proxy: proxy))
+
             
         }
         .onChange(of: keyboardManager.isKeyboardOpen) { isOpen in
@@ -304,12 +305,6 @@ private extension StoryDetailView {
         }
     }
     
-    func getAngle(proxy: GeometryProxy) -> Angle {
-        let rotation: CGFloat = 45
-        let progress = proxy.frame(in: .global).minX / proxy.size.width
-        let degrees = rotation * progress
-        return Angle(degrees: degrees)
-    }
     
     func resetProgress() {
         timerProgress = 0
@@ -538,5 +533,29 @@ extension View {
         } else {
             self.background(Color.black.opacity(0.3))
         }
+    }
+}
+
+struct PageFlipModifier: ViewModifier {
+    let proxy: GeometryProxy
+
+    private var progress: CGFloat {
+        proxy.frame(in: .global).minX / proxy.size.width
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .rotation3DEffect(
+                Angle(degrees: progress * 30),          // gentle 30° max rotation
+                axis: (x: 0, y: 1, z: 0),
+                anchor: progress > 0 ? .leading : .trailing,
+                perspective: 0.4                        // low = less distortion
+            )
+            .scaleEffect(
+                x: 1.0,
+                y: max(0.92, 1.0 - abs(progress) * 0.08), // very subtle vertical squeeze
+                anchor: .center
+            )
+            .opacity(max(0.6, 1.0 - abs(progress) * 0.4)) // fade out as it flips away
     }
 }
