@@ -80,50 +80,46 @@ struct StoryDetailView: View {
                     VStack {
                         Spacer()
 
-                        if let title = story.title {
-                            HStack(alignment: .center, spacing: 8) {
-                                if !title.isEmpty, !title.hasPrefix("Story 20") {
-                                    Text(title)
-                                        .font(.system(size: 20, weight: .semibold))
-                                        .foregroundColor(.white)
-                                        .shadow(color: .black.opacity(0.7), radius: 4, x: 0, y: 2) // ← ADD
-                                        .multilineTextAlignment(.leading)
-                                }
-                                Spacer()
-                                if isMyStory {
-                                    Button(action: {
-                                        NotificationCenter.default.post(
-                                            name: .storyViewersTapped,
-                                            object: story.id
-                                        )
-                                    }) {
-                                        if #available(iOS 15.0, *) {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "eye.fill")
-                                                    .font(.system(size: 12, weight: .semibold))
-                                                Text("\(story.viewCount)")
-                                                    .font(.system(size: 12, weight: .bold))
-                                                    .monospacedDigit()
-                                            }
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .background(.ultraThinMaterial)
-                                            .clipShape(Capsule())
-                                            .overlay(
-                                                Capsule().stroke(Color.white.opacity(0.3), lineWidth: 0.5)
-                                            )
-                                        }
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
+                        HStack(alignment: .center, spacing: 8) {
+                            if let title = story.title, !title.isEmpty {
+                                Text(title)
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.7), radius: 4, x: 0, y: 2)
+                                    .multilineTextAlignment(.leading)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .frame(maxWidth: .infinity)
-              
+                            Spacer()
+                            if isMyStory {
+                                Button(action: {
+                                    NotificationCenter.default.post(
+                                        name: .storyViewersTapped,
+                                        object: story.id
+                                    )
+                                }) {
+                                    if #available(iOS 15.0, *) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "eye.fill")
+                                                .font(.system(size: 12, weight: .semibold))
+                                            Text("\(story.viewCount)")
+                                                .font(.system(size: 12, weight: .bold))
+                                                .monospacedDigit()
+                                        }
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Capsule())
+                                        .overlay(
+                                            Capsule().stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                                        )
+                                    }
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
                         }
-
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
                         if !isMyStory {
                             messageView(with: index)
                                 .padding(.horizontal, 16)
