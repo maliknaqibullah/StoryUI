@@ -83,7 +83,7 @@ private extension PlayerView {
         self.player?.automaticallyWaitsToMinimizeStalling = false
         self.getVideoLength(videoURL: url)
         self.playerLayer.player = self.player
-        self.playerLayer.videoGravity = .resizeAspectFill
+        self.playerLayer.videoGravity = .resizeAspect
         self.playerLayer.backgroundColor = UIColor.black.cgColor
         playerLayer.removeFromSuperlayer()
         self.contentView.layer.addSublayer(self.playerLayer)
