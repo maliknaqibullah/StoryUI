@@ -61,8 +61,12 @@ struct UserView: View {
 
 
 public struct RelativeTimeText: View {
-    let date: Date
+    public let date: Date
     @State private var text: String = ""
+    
+    public init(date: Date) {
+        self.date = date
+    }
     
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     private static let dateFormatter: DateFormatter = {
@@ -71,7 +75,7 @@ public struct RelativeTimeText: View {
         return f
     }()
     
-    var body: some View {
+    public var body: some View {
         Text(text)
             .onAppear { text = formatted() }
             .onReceive(timer) { _ in text = formatted() }
