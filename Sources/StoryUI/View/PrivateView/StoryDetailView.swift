@@ -245,10 +245,10 @@ private extension StoryDetailView {
                 .padding(.vertical, 8)
 
                 UserView(
-                    image:     model.user.image,
-                    name:      model.user.name,
-                    date:      model.stories[safe: index]?.date ?? "",
-                    isMyStory: isMyStory,
+                    image:       model.user.image,
+                    name:        model.user.name,
+                    date:        model.stories[safe: index]?.date ?? Date(),
+                    isMyStory:   isMyStory,
                     isPresented: $isPresented
                 )
             }

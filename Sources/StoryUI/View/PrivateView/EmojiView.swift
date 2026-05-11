@@ -69,7 +69,7 @@ struct EmojiView: View {
 
 struct EmojiView_Previews: PreviewProvider {
     static var previews: some View {
-        EmojiView(story: .init(mediaURL: "", date: "", config: StoryConfiguration(mediaType: .image)),
+        EmojiView(story: .init(mediaURL: "", date: Date(), config: StoryConfiguration(mediaType: .image)),
                   emojiArray: [["😂", "😮", "😍"]],
                   startAnimating: .constant(false),
                   selectedEmoji: .constant("🤪"),

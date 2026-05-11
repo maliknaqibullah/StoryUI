@@ -11,7 +11,7 @@ struct UserView: View {
     
     var image: String
     var name: String
-    var date: String
+    var date: Date
     var isMyStory: Bool = false
     
     @Binding var isPresented: Bool
@@ -23,7 +23,7 @@ struct UserView: View {
                 Text(name)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
-                Text(date)
+                RelativeTimeText(date: date)
                     .font(.system(size: Constant.UserView.textSize, weight: .thin))
                     .foregroundColor(.white)
             }
@@ -56,5 +56,35 @@ struct UserView: View {
                 }
         }
         .padding(.horizontal)
+    }
+}
+
+
+struct RelativeTimeText: View {
+    let date: Date
+    @State private var text: String = ""
+    
+    private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return f
+    }()
+    
+    var body: some View {
+        Text(text)
+            .onAppear { text = formatted() }
+            .onReceive(timer) { _ in text = formatted() }
+    }
+    
+    private func formatted() -> String {
+        let diff = Date().timeIntervalSince(date)
+        switch diff {
+        case ..<60:     return "Just now"
+        case ..<3600:   return "\(Int(diff / 60))m ago"
+        case ..<86400:  return "\(Int(diff / 3600))h ago"
+        case ..<172800: return "Yesterday"
+        default:        return Self.dateFormatter.string(from: date)
+        }
     }
 }

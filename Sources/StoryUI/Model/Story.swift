@@ -10,7 +10,7 @@ import Foundation
 public struct Story: Identifiable, Hashable {
     public var id: String
     public var mediaURL: String
-    public var date: String
+    public var date: Date
     public var isReady: Bool = false
     public var isLiked: Bool = false
     public var duration: Double = Constant.storySecond
@@ -19,7 +19,7 @@ public struct Story: Identifiable, Hashable {
     public var viewCount: Int = 0
     public init(id: String = UUID().uuidString,
                 mediaURL: String,
-                date: String,
+                date: Date = Date(),
                 isLiked: Bool = false,
                 duration: Double = 5,
                 config: StoryConfiguration,

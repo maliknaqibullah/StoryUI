@@ -119,7 +119,7 @@ private extension MessageView {
 
 struct MessageView_Previews: PreviewProvider {
     static var previews: some View {
-        MessageView(story: Story(mediaURL: "", date: "", config: StoryConfiguration(mediaType: .image)), showEmoji: .constant(true), userClosure: nil)
+        MessageView(story: Story(mediaURL: "", date: Date(), config: StoryConfiguration(mediaType: .image)), showEmoji: .constant(true), userClosure: nil)
     }
 }
 
