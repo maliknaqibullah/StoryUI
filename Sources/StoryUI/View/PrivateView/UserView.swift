@@ -60,7 +60,7 @@ struct UserView: View {
 }
 
 
-struct RelativeTimeText: View {
+public struct RelativeTimeText: View {
     let date: Date
     @State private var text: String = ""
     
