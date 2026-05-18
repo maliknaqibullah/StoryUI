@@ -77,9 +77,11 @@ public struct StoryView: View {
         viewModel.stories = stories
         let index = stories.indices.contains(selectedIndex) ? selectedIndex : .zero
         let storyUser = stories[index]
-        viewModel.currentStoryUser = storyUser.id
         if !storyUser.stories.isEmpty {
             viewModel.stories[index].isSeen = true
+        }
+        DispatchQueue.main.async {
+            viewModel.currentStoryUser = storyUser.id
         }
     }
 
