@@ -65,7 +65,6 @@ public struct StoryView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 startStory()
-                onUserChanged?(stories[selectedIndex < stories.count ? selectedIndex : 0].id)
             }
             .onDisappear {
                 stopVideo()
@@ -75,13 +74,14 @@ public struct StoryView: View {
     
     private func startStory() {
         guard !stories.isEmpty else { return }
-        let index = stories.indices.contains(selectedIndex) ? selectedIndex : .zero
+        let index = stories.indices.contains(selectedIndex) ? selectedIndex : 0
         let storyUser = stories[index]
         viewModel.stories = stories
         viewModel.currentStoryUser = storyUser.id
         if !storyUser.stories.isEmpty {
             viewModel.stories[index].isSeen = true
         }
+        onUserChanged?(storyUser.id)
     }
     private func stopVideo() {
         NotificationCenter.default.post(name: .stopVideo, object: nil)
