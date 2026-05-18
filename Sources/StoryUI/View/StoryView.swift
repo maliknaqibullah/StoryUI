@@ -77,11 +77,18 @@ public struct StoryView: View {
         viewModel.stories = stories
         let index = stories.indices.contains(selectedIndex) ? selectedIndex : .zero
         let storyUser = stories[index]
+        print("[MKStory][startStory] selectedIndex: \(selectedIndex) index: \(index) storyUser.id: \(storyUser.id)")
+        print("[MKStory][startStory] stories count: \(stories.count)")
+        for (i, s) in stories.enumerated() {
+            print("[MKStory][startStory] [\(i)] id: \(s.id) name: \(s.user.name)")
+        }
         if !storyUser.stories.isEmpty {
             viewModel.stories[index].isSeen = true
         }
         DispatchQueue.main.async {
+            print("[MKStory][startStory] setting currentStoryUser: \(storyUser.id)")
             viewModel.currentStoryUser = storyUser.id
+            print("[MKStory][startStory] currentStoryUser after set: \(self.viewModel.currentStoryUser)")
         }
     }
 
