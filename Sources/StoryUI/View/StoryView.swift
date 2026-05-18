@@ -56,6 +56,7 @@ public struct StoryView: View {
                             onDeleteTapped: onDeleteTapped,
                             myUserID: myUserID
                         )
+                        .tag(model.id)
                     }
                 }
             }
