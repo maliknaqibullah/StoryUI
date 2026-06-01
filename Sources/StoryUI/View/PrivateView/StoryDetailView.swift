@@ -126,8 +126,6 @@ struct StoryDetailView: View {
                                 .padding(.vertical, 12)
                                 .frame(maxWidth: .infinity)
                                 .glassBackground()
-                                .animation(messageViewPosition == 0 ? .none : .easeOut)
-                                .offset(y: messageViewPosition)
                         }
             
                     }

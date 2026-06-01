@@ -20,6 +20,9 @@ struct MessageView: View {
     @State private var likeButtonTapped: Bool = false
     @State private var clearText: Bool = false
    
+    private var hasMessageText: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
     
     var body: some View {
         HStack(spacing: 16) {
@@ -41,11 +44,13 @@ struct MessageView: View {
 private extension MessageView {
     var onCommitAction: () -> Void {
         return {
-            guard !text.isEmpty else {
-                return
-            }
-            clearText.toggle()
-            userClosure?(story, text, nil, false)
+            let message = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !message.isEmpty else { return }
+
+            userClosure?(story, message, nil, false)
+
+            text = ""
+            showEmoji = true
         }
     }
     
@@ -59,6 +64,16 @@ private extension MessageView {
                 .font(.title2)
                 .foregroundColor(likeButtonTapped ? .red : .white)
             
+        }
+    }
+    
+    var sendButton: some View {
+        Button {
+            onCommitAction()
+        } label: {
+            Image(systemName: "arrow.up.circle.fill")
+                .font(.title2)
+                .foregroundColor(.white)
         }
     }
     
@@ -112,8 +127,11 @@ private extension MessageView {
                     .stroke(.white)
             )
             
-            buttonViewBuilder(config)
-        }
+            if hasMessageText {
+                sendButton
+            } else {
+                buttonViewBuilder(config)
+            }        }
     }
 }
 
