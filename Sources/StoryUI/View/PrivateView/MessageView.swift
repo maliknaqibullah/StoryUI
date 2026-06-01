@@ -19,7 +19,9 @@ struct MessageView: View {
     @State private var text: String = ""
     @State private var likeButtonTapped: Bool = false
     @State private var clearText: Bool = false
-   
+    
+    @FocusState private var isMessageFocused: Bool
+    
     private var hasMessageText: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -56,6 +58,7 @@ private extension MessageView {
 
             text = ""
             showEmoji = true
+            isMessageFocused = false   // dismiss keyboard
         }
     }
     
@@ -114,6 +117,7 @@ private extension MessageView {
             TextField("",
                       text: $text,
                       onCommit: onCommitAction)
+            
             .placeholder(when: text.isEmpty, view: {
                 Text(placeholder).foregroundColor(.white.opacity(0.85))
             })
@@ -135,7 +139,7 @@ private extension MessageView {
                 Capsule()
                     .stroke(Color.white.opacity(0.9), lineWidth: 1.2)
             )
-
+            .focused($isMessageFocused)
             if hasMessageText {
                 sendButton
             } else {
