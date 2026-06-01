@@ -23,6 +23,11 @@ struct MessageView: View {
     private var hasMessageText: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+
+    private let inputHeight: CGFloat = 44
+    private let actionButtonSize: CGFloat = 48
+    private let actionIconSize: CGFloat = 38
+    
     
     var body: some View {
         HStack(spacing: 16) {
@@ -61,9 +66,10 @@ private extension MessageView {
             userClosure?(story, text, nil, likeButtonTapped)
         } label: {
             Image(systemName: likeButtonTapped ? Constant.MessageView.likeImageTapped : Constant.MessageView.likeImage)
-                .font(.title2)
+                .font(.system(size: 30, weight: .semibold))
                 .foregroundColor(likeButtonTapped ? .red : .white)
-            
+                .frame(width: actionButtonSize, height: actionButtonSize)
+                .contentShape(Circle())
         }
     }
     
@@ -72,8 +78,10 @@ private extension MessageView {
             onCommitAction()
         } label: {
             Image(systemName: "arrow.up.circle.fill")
-                .font(.title2)
+                .font(.system(size: actionIconSize, weight: .semibold))
                 .foregroundColor(.white)
+                .frame(width: actionButtonSize, height: actionButtonSize)
+                .contentShape(Circle())
         }
     }
     
@@ -94,7 +102,7 @@ private extension MessageView {
                     likeButton
                 }
             }
-            .frame(height: Constant.MessageView.height)
+            .frame(width: actionButtonSize, height: actionButtonSize)
         } else {
             EmptyView()
         }
@@ -102,36 +110,38 @@ private extension MessageView {
     
     
     func messageViewBuilder(_ config: StoryInteractionConfig?, _ placeholder: String) -> some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             TextField("",
                       text: $text,
                       onCommit: onCommitAction)
             .placeholder(when: text.isEmpty, view: {
-                Text(placeholder).foregroundColor(.white)
+                Text(placeholder).foregroundColor(.white.opacity(0.85))
             })
             .onChange(of: text, perform: { newValue in
                 showEmoji = newValue.isEmpty
             })
             .onChange(of: clearText, perform: { newValue in
                 text = ""
-                showEmoji = newValue
+                showEmoji = true
             })
             .onChange(of: story, perform: { newValue in
                 likeButtonTapped = newValue.isLiked
             })
+            .font(.system(size: 17))
             .foregroundColor(.white)
-            .frame(height: Constant.MessageView.height)
-            .padding(Constant.MessageView.padding)
+            .frame(height: inputHeight)
+            .padding(.horizontal, 16)
             .overlay(
-                RoundedRectangle(cornerRadius: Constant.MessageView.cornerRadius)
-                    .stroke(.white)
+                Capsule()
+                    .stroke(Color.white.opacity(0.9), lineWidth: 1.2)
             )
-            
+
             if hasMessageText {
                 sendButton
             } else {
                 buttonViewBuilder(config)
-            }        }
+            }
+        }
     }
 }
 
