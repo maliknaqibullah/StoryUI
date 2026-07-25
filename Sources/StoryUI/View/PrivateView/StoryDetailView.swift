@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVKit
+import UIKit
 
 struct StoryDetailView: View {
     // MARK: Public Properties
@@ -48,6 +49,14 @@ struct StoryDetailView: View {
     
     private var emojiViewPosition: CGFloat {
         return (messageViewPosition * 1.5)
+    }
+    func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
     
     var body: some View {
@@ -160,11 +169,24 @@ struct StoryDetailView: View {
             }
         }
         .onChange(of: viewModel.currentStoryUser) { newValue in
-            NotificationCenter.default.post(name: .stopVideo, object: nil)
+            dismissKeyboard()
+
+            NotificationCenter.default.post(
+                name: .stopVideo,
+                object: nil
+            )
+
             currentStoryProgress = 0
             timerProgress = 0
             resetProgress()
-            playVideo()
+
+            DispatchQueue.main.async {
+                if !isPaused &&
+                   !keyboardManager.isKeyboardOpen {
+                    playVideo()
+                }
+            }
+
             onUserChanged?(newValue)
         }
         .onReceive(timer) { _ in
