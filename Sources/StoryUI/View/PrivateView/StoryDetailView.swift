@@ -143,9 +143,20 @@ struct StoryDetailView: View {
         }
         .onChange(of: keyboardManager.isKeyboardOpen) { isOpen in
             if isOpen {
-                pauseStory()
-            } else {
-                resumeStory()
+                /*
+                 Pause video directly without changing the shared
+                 isPaused state.
+                 */
+                if model.stories[getCurrentIndex()]
+                    .config.mediaType == .video {
+                    player.pause()
+                }
+            } else if !isPaused {
+                /*
+                 Resume only when another feature has not requested
+                 that the story remain paused.
+                 */
+                playVideo()
             }
         }
         .onChange(of: viewModel.currentStoryUser) { newValue in
@@ -164,14 +175,18 @@ struct StoryDetailView: View {
             isTimerRunning = state
         }
         .onChange(of: isPaused) { paused in
-            if paused {
-                if model.stories[getCurrentIndex()].config.mediaType == .video {
-                    player.pause()
-                }
+            let isVideo =
+                model.stories[getCurrentIndex()]
+                    .config.mediaType == .video
+
+            guard isVideo else {
+                return
+            }
+
+            if paused || keyboardManager.isKeyboardOpen {
+                player.pause()
             } else {
-                if model.stories[getCurrentIndex()].config.mediaType == .video {
-                    player.play()
-                }
+                playVideo()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .storyDeleteTapped)) { _ in
@@ -293,30 +308,60 @@ private extension StoryDetailView {
                 .onTapGesture {
                     tapPreviousStory()
                 }
-                .onLongPressGesture(minimumDuration: 0.2, pressing: { isPressing in
-                    if isPressing {
-                        pauseStory()
-                    } else {
-                        resumeStory()
-                    }
-                }, perform: {})
-            
+                .onLongPressGesture(
+                    minimumDuration: 0.2,
+                    pressing: { isPressing in
+                        handleStoryPress(
+                            isPressing
+                        )
+                    },
+                    perform: {}
+                )
+
             Rectangle()
                 .fill(.black.opacity(0.01))
                 .onTapGesture {
                     tapNextStory()
                 }
-                .onLongPressGesture(minimumDuration: 0.2, pressing: { isPressing in
-                    if isPressing {
-                        pauseStory()
-                    } else {
-                        resumeStory()
-                    }
-                }, perform: {})
+                .onLongPressGesture(
+                    minimumDuration: 0.2,
+                    pressing: { isPressing in
+                        handleStoryPress(
+                            isPressing
+                        )
+                    },
+                    perform: {}
+                )
         }
+
+        /*
+         While the message keyboard is open, the story navigation
+         layer must not receive taps or long presses.
+         */
+        .allowsHitTesting(
+            !keyboardManager.isKeyboardOpen
+        )
     }
     
-    
+    func handleStoryPress(
+        _ isPressing: Bool
+    ) {
+        if isPressing {
+            pauseStory()
+            return
+        }
+
+        /*
+         A touch release must never resume playback while the user
+         is still typing.
+         */
+        guard !keyboardManager.isKeyboardOpen else {
+            pauseStory()
+            return
+        }
+
+        resumeStory()
+    }
     func resetProgress() {
         timerProgress = 0
     }
@@ -394,8 +439,12 @@ private extension StoryDetailView {
     }
     
     func startProgress() {
-        guard !isTimerRunning && !isPaused else { return }
-        
+        guard !isTimerRunning,
+              !isPaused,
+              !keyboardManager.isKeyboardOpen
+        else {
+            return
+        }
         let index = getCurrentIndex()
         let story = getStory(with: index)
         
@@ -430,8 +479,15 @@ private extension StoryDetailView {
     }
     
     func tapNextStory() {
+        guard !keyboardManager.isKeyboardOpen else {
+            pauseStory()
+            return
+        }
+
         configureTapScreen()
-        guard !isTapDisabled else { return }
+        guard !isTapDisabled else {
+            return
+        }
         
         if (timerProgress + 1) > CGFloat(model.stories.count) {
             // Next user
@@ -444,8 +500,15 @@ private extension StoryDetailView {
     }
 
     func tapPreviousStory() {
+        guard !keyboardManager.isKeyboardOpen else {
+            pauseStory()
+            return
+        }
+
         configureTapScreen()
-        guard !isTapDisabled else { return }
+        guard !isTapDisabled else {
+            return
+        }
         
         if (timerProgress - 1) < 0 {
             // Previous user
