@@ -18,6 +18,7 @@ public struct StoryView: View {
     private var selectedIndex: Int
     let userClosure: UserCompletionHandler?
     let onUserChanged: ((String) -> Void)?
+    let onAvatarTapped: ((String) -> Void)?
     let onDeleteTapped: ((String) -> Void)?
     let myUserID: String?
 
@@ -28,6 +29,7 @@ public struct StoryView: View {
         isPaused: Binding<Bool> = .constant(false),
         userClosure: UserCompletionHandler? = nil,
         onUserChanged: ((String) -> Void)? = nil,
+        onAvatarTapped: ((String) -> Void)? = nil,
         onDeleteTapped: ((String) -> Void)? = nil,
         myUserID: String? = nil
     ) {
@@ -37,6 +39,7 @@ public struct StoryView: View {
         self._isPaused = isPaused
         self.userClosure = userClosure
         self.onUserChanged = onUserChanged
+        self.onAvatarTapped = onAvatarTapped
         self.onDeleteTapped = onDeleteTapped
         self.myUserID = myUserID
     }
@@ -53,6 +56,7 @@ public struct StoryView: View {
                             isPaused: $isPaused,
                             userClosure: userClosure,
                             onUserChanged: onUserChanged,
+                            onAvatarTapped: onAvatarTapped,
                             onDeleteTapped: onDeleteTapped,
                             myUserID: myUserID
                         )

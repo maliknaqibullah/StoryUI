@@ -21,7 +21,8 @@ struct StoryDetailView: View {
     @Binding var isPaused: Bool
 
     let userClosure: UserCompletionHandler?
-    let onUserChanged: ((String) -> Void)?    // ← ADD
+    let onUserChanged: ((String) -> Void)?
+    let onAvatarTapped: ((String) -> Void)?
     let onDeleteTapped: ((String) -> Void)?
     let myUserID: String?
     
@@ -243,11 +244,28 @@ private extension StoryDetailView {
                 .padding(.vertical, 8)
 
                 UserView(
-                    image:       model.user.image,
-                    name:        model.user.name,
-                    date:        model.stories[safe: index]?.date ?? Date(),
-                    isMyStory:   isMyStory,
-                    isPresented: $isPresented
+                    image: model.user.image,
+                    name: model.user.name,
+                    date: model.stories[safe: index]?.date ?? Date(),
+                    isMyStory: isMyStory,
+                    isPresented: $isPresented,
+                    onAvatarTapped: {
+                        guard !isMyStory else {
+                            return
+                        }
+
+                        /*
+                         Stop story progress immediately while the viewer is being
+                         dismissed and the app changes tabs.
+                         */
+                        pauseStory()
+
+                        /*
+                         StoryUIModel.id is the author's JID in your mapper.
+                         Do not use model.user.id here.
+                         */
+                        onAvatarTapped?(model.id)
+                    }
                 )
             }
         }

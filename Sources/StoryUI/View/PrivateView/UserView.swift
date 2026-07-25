@@ -13,12 +13,45 @@ struct UserView: View {
     var name: String
     var date: Date
     var isMyStory: Bool = false
-    
+    let onAvatarTapped: (() -> Void)?
     @Binding var isPresented: Bool
+    
+    init(
+        image: String,
+        name: String,
+        date: Date,
+        isMyStory: Bool,
+        isPresented: Binding<Bool>,
+        onAvatarTapped: (() -> Void)? = nil
+    ) {
+        self.image = image
+        self.name = name
+        self.date = date
+        self.isMyStory = isMyStory
+        self._isPresented = isPresented
+        self.onAvatarTapped = onAvatarTapped
+    }
     
     var body: some View {
         HStack(spacing: Constant.UserView.hStackSpace) {
-            CacheAsyncImage(urlString: image)
+            if let onAvatarTapped {
+                Button(action: onAvatarTapped) {
+                    CacheAsyncImage(urlString: image)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(
+                    String(
+                        format: NSLocalizedString(
+                            "Open chat with %@",
+                            comment: "Story avatar accessibility label"
+                        ),
+                        name
+                    )
+                )
+            } else {
+                CacheAsyncImage(urlString: image)
+            }
             VStack(alignment: .leading) {
                 Text(name)
                     .fontWeight(.bold)
