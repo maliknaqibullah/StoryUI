@@ -21,6 +21,12 @@ public struct StoryView: View {
     let onAvatarTapped: ((String) -> Void)?
     let onDeleteTapped: ((String) -> Void)?
     let myUserID: String?
+    private var avatarUpdateToken: String {
+        stories.map { model in
+            "\(model.id)|\(String(describing: model.user.image))"
+        }
+        .joined(separator: "||")
+    }
 
     public init(
         stories: [StoryUIModel],
@@ -70,6 +76,9 @@ public struct StoryView: View {
             .onAppear {
                 startStory()
             }
+            .onChange(of: avatarUpdateToken) { _ in
+                updateStoriesFromParent()
+            }
             .onDisappear {
                 stopVideo()
             }
@@ -86,6 +95,19 @@ public struct StoryView: View {
             viewModel.stories[index].isSeen = true
         }
         onUserChanged?(storyUser.id)
+    }
+    private func updateStoriesFromParent() {
+        let currentUserID = viewModel.currentStoryUser
+
+        // Copy the latest models, including updated avatar URLs.
+        viewModel.stories = stories
+
+        // Keep the currently visible person's story selected.
+        if stories.contains(where: { $0.id == currentUserID }) {
+            viewModel.currentStoryUser = currentUserID
+        } else if let firstUser = stories.first {
+            viewModel.currentStoryUser = firstUser.id
+        }
     }
     private func stopVideo() {
         NotificationCenter.default.post(name: .stopVideo, object: nil)
