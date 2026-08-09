@@ -20,14 +20,10 @@ public struct StoryView: View {
     let onUserChanged: ((String) -> Void)?
     let onAvatarTapped: ((String) -> Void)?
     let onDeleteTapped: ((String) -> Void)?
+    /// Called once per story, when that story is actually rendered on screen.
+    /// Parameters: the user (model) id, then the story id.
+    let onStoryDisplayed: ((String, String) -> Void)?
     let myUserID: String?
-    private var avatarUpdateToken: String {
-        stories.map { model in
-            "\(model.id)|\(String(describing: model.user.image))"
-        }
-        .joined(separator: "||")
-    }
-
     public init(
         stories: [StoryUIModel],
         selectedIndex: Int = 0,
@@ -37,6 +33,7 @@ public struct StoryView: View {
         onUserChanged: ((String) -> Void)? = nil,
         onAvatarTapped: ((String) -> Void)? = nil,
         onDeleteTapped: ((String) -> Void)? = nil,
+        onStoryDisplayed: ((String, String) -> Void)? = nil,
         myUserID: String? = nil
     ) {
         self.stories = stories
@@ -47,6 +44,7 @@ public struct StoryView: View {
         self.onUserChanged = onUserChanged
         self.onAvatarTapped = onAvatarTapped
         self.onDeleteTapped = onDeleteTapped
+        self.onStoryDisplayed = onStoryDisplayed
         self.myUserID = myUserID
     }
     public var body: some View {
@@ -64,6 +62,7 @@ public struct StoryView: View {
                             onUserChanged: onUserChanged,
                             onAvatarTapped: onAvatarTapped,
                             onDeleteTapped: onDeleteTapped,
+                            onStoryDisplayed: onStoryDisplayed,
                             myUserID: myUserID
                         )
                         .tag(model.id)
@@ -76,7 +75,7 @@ public struct StoryView: View {
             .onAppear {
                 startStory()
             }
-            .onChange(of: avatarUpdateToken) { _ in
+            .onChange(of: stories) { _ in
                 updateStoriesFromParent()
             }
             .onDisappear {
@@ -99,8 +98,14 @@ public struct StoryView: View {
     private func updateStoriesFromParent() {
         let currentUserID = viewModel.currentStoryUser
 
-        // Copy the latest models, including updated avatar URLs.
-        viewModel.stories = stories
+        // Copy the latest models, including updated avatar URLs and like state,
+        // but keep the locally tracked seen flag.
+        let seenIDs = Set(viewModel.stories.filter(\.isSeen).map(\.id))
+        var updated = stories
+        for index in updated.indices where seenIDs.contains(updated[index].id) {
+            updated[index].isSeen = true
+        }
+        viewModel.stories = updated
 
         // Keep the currently visible person's story selected.
         if stories.contains(where: { $0.id == currentUserID }) {

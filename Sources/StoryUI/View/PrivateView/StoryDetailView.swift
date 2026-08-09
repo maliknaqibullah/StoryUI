@@ -25,6 +25,7 @@ struct StoryDetailView: View {
     let onUserChanged: ((String) -> Void)?
     let onAvatarTapped: ((String) -> Void)?
     let onDeleteTapped: ((String) -> Void)?
+    let onStoryDisplayed: ((String, String) -> Void)?
     let myUserID: String?
     
     
@@ -39,6 +40,8 @@ struct StoryDetailView: View {
     @State private var isAnimationStarted: Bool = false
     @State private var isTapDisabled: Bool = false
     @State private var showEmoji: Bool = true
+    /// Stories already reported as displayed, so each one reports exactly once.
+    @State private var displayedStoryIDs: Set<String> = []
 
     private var isMyStory: Bool {
           model.id == myUserID
@@ -211,6 +214,9 @@ struct StoryDetailView: View {
                 playVideo()
             }
         }
+        .onChange(of: viewModel.stories) { updated in
+            syncMetadataFromViewModel(updated)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .storyDeleteTapped)) { _ in
             guard isMyStory else { return }
             let currentStoryID = model.stories[safe: getCurrentIndex()]?.id ?? ""
@@ -221,7 +227,30 @@ struct StoryDetailView: View {
 
 // MARK: Private Configuration
 private extension StoryDetailView {
-    
+
+    /*
+     `model` is local state so playback details (isReady, measured video
+     duration) survive re-renders. Host-owned metadata such as the like state,
+     view count and avatar must still follow the latest data, so copy only
+     those fields back in.
+    */
+    func syncMetadataFromViewModel(_ updated: [StoryUIModel]) {
+        guard let latest = updated.first(where: { $0.id == model.id }) else { return }
+
+        model.user = latest.user
+
+        for index in model.stories.indices {
+            guard let source = latest.stories.first(where: {
+                $0.id == model.stories[index].id
+            }) else { continue }
+
+            model.stories[index].isLiked   = source.isLiked
+            model.stories[index].viewCount = source.viewCount
+            model.stories[index].title     = source.title
+        }
+    }
+
+
     @ViewBuilder
     func getStoryView(with index: Int, story: Story) -> some View {
         switch story.config.mediaType {
@@ -476,6 +505,12 @@ private extension StoryDetailView {
             }
             if timerProgress < CGFloat(model.stories.count) {
                 if story.isReady {
+                    /*
+                     The story is on screen, its media is ready and playback is
+                     running: this is the moment it counts as displayed.
+                    */
+                    reportDisplayedIfNeeded(story)
+
                     let increment = 0.01 / story.duration
                     currentStoryProgress += increment
                     timerProgress = CGFloat(index) + currentStoryProgress
@@ -541,6 +576,12 @@ private extension StoryDetailView {
             timerProgress = CGFloat(Int(timerProgress - 1))
         }
     }
+    func reportDisplayedIfNeeded(_ story: Story) {
+        guard !displayedStoryIDs.contains(story.id) else { return }
+        displayedStoryIDs.insert(story.id)
+        onStoryDisplayed?(model.id, story.id)
+    }
+
     func start(index: Int) {
         if !model.stories[index].isReady {
             model.stories[index].isReady = true

@@ -45,6 +45,12 @@ struct MessageView: View {
                 }
             }
         }
+        // The like button must always reflect the persisted state of the
+        // story that is currently on screen, both on first appearance and
+        // whenever the story (or its like state) is refreshed from the host.
+        .onAppear { likeButtonTapped = story.isLiked }
+        .onChange(of: story.id) { _ in likeButtonTapped = story.isLiked }
+        .onChange(of: story.isLiked) { likeButtonTapped = $0 }
     }
 }
 
@@ -65,8 +71,11 @@ private extension MessageView {
     
     var likeButton: some View  {
         Button {
-            likeButtonTapped.toggle()
-            userClosure?(story, text, nil, likeButtonTapped)
+            let newValue = !likeButtonTapped
+            likeButtonTapped = newValue
+            // Pass no message here: this tap is a like/unlike only, never a
+            // comment. The host decides whether the state actually changed.
+            userClosure?(story, nil, nil, newValue)
         } label: {
             Image(systemName: likeButtonTapped ? Constant.MessageView.likeImageTapped : Constant.MessageView.likeImage)
                 .font(.system(size: 30, weight: .semibold))
@@ -127,9 +136,6 @@ private extension MessageView {
             .onChange(of: clearText, perform: { newValue in
                 text = ""
                 showEmoji = true
-            })
-            .onChange(of: story, perform: { newValue in
-                likeButtonTapped = newValue.isLiked
             })
             .font(.system(size: 17))
             .foregroundColor(.white)

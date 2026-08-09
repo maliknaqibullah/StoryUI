@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/qariozair/Documents/StoryUI/.build/arm64-apple-macosx/debug/StoryUITests.build/master.swiftdeps"
+  },
+  "/Users/qariozair/Documents/StoryUI/Tests/StoryUITests/StoryUITests.swift": {
+    "dependencies": "/Users/qariozair/Documents/StoryUI/.build/arm64-apple-macosx/debug/StoryUITests.build/StoryUITests.d",
+    "object": "/Users/qariozair/Documents/StoryUI/.build/arm64-apple-macosx/debug/StoryUITests.build/StoryUITests.swift.o",
+    "swiftmodule": "/Users/qariozair/Documents/StoryUI/.build/arm64-apple-macosx/debug/StoryUITests.build/StoryUITests~partial.swiftmodule",
+    "swift-dependencies": "/Users/qariozair/Documents/StoryUI/.build/arm64-apple-macosx/debug/StoryUITests.build/StoryUITests.swiftdeps",
+    "diagnostics": "/Users/qariozair/Documents/StoryUI/.build/arm64-apple-macosx/debug/StoryUITests.build/StoryUITests.dia"
+  }
+}
