@@ -50,9 +50,6 @@ struct StoryDetailView: View {
     @State private var displayedStoryIDs: Set<String> = []
     /// The reply composer holds the keyboard focus.
     @State private var isComposerActive: Bool = false
-    /// Height of the title row plus reply composer, kept out of the touch
-    /// layer so a tap there always reaches the composer.
-    @State private var bottomControlsHeight: CGFloat = 0
     /// A finger is on the story and this view is the one that paused it.
     @State private var isPausedByTouch: Bool = false
     /// The pause state that was in effect before the finger went down, so a
@@ -135,14 +132,6 @@ struct StoryDetailView: View {
                     VStack {
                         Spacer()
 
-                        /*
-                         Measured: the touch layer must not reach into this
-                         area. It is a real UIKit view while the composer next
-                         to it is plain SwiftUI, and that mix does not resolve
-                         z-order reliably — the touch layer would swallow the
-                         tap that should focus the reply field.
-                        */
-                        VStack(spacing: 0) {
                         HStack(alignment: .center, spacing: 8) {
                             if let title = story.title, !title.isEmpty {
                                 Text(title)
@@ -190,15 +179,6 @@ struct StoryDetailView: View {
                                 .frame(maxWidth: .infinity)
                                 .glassBackground()
                         }
-                        }
-                        .background(
-                            GeometryReader { controlsProxy in
-                                Color.clear.preference(
-                                    key: StoryBottomControlsHeightKey.self,
-                                    value: controlsProxy.size.height
-                                )
-                            }
-                        )
                     }
 
                 }
@@ -212,9 +192,6 @@ struct StoryDetailView: View {
             
         }
         .animation(.easeInOut(duration: 0.2), value: isComposerActive)
-        .onPreferenceChange(StoryBottomControlsHeightKey.self) { height in
-            bottomControlsHeight = height
-        }
         .onChange(of: keyboardManager.isKeyboardOpen) { isOpen in
             if isOpen {
                 /*
@@ -255,8 +232,6 @@ struct StoryDetailView: View {
              The whole screen has to know: paging, incoming story updates and
              playback all stand still while someone is writing.
             */
-            viewModel.setComposerActive(active)
-
             //the composer owns the story while it is active
             if active,
                model.stories[getCurrentIndex()].config.mediaType == .video {
@@ -264,13 +239,6 @@ struct StoryDetailView: View {
             }
         }
         .onDisappear {
-            /*
-             A paging TabView also sends onDisappear for pages it merely
-             recycles. Only the page that is no longer the current story may
-             tear the composer down — otherwise the keyboard closed under a user
-             who was still typing.
-            */
-            guard viewModel.currentStoryUser != model.id else { return }
             closeComposer()
         }
         .onChange(of: viewModel.currentStoryUser) { newValue in
@@ -446,7 +414,6 @@ private extension StoryDetailView {
             story: story,
             showEmoji: $showEmoji,
             isComposerActive: $isComposerActive,
-            draftStore: viewModel.draftStore,
             userClosure: userClosure
         )
         .padding()
@@ -468,7 +435,6 @@ private extension StoryDetailView {
     func storyTouchLayer() -> some View {
         StoryTouchSurface(
             isEnabled: !isComposerActive && !keyboardManager.isKeyboardOpen,
-            locksPaging: isComposerActive || keyboardManager.isKeyboardOpen,
             onHoldBegan: { beginTouchPause() },
             onSessionEnded: { endTouchSession() },
             onTap: { zone in
@@ -480,12 +446,6 @@ private extension StoryDetailView {
                 }
             }
         )
-        /*
-         Everything below this line belongs to the composer. Reserving the
-         measured height keeps the two layers apart instead of relying on
-         z-order between a UIKit view and SwiftUI content.
-        */
-        .padding(.bottom, bottomControlsHeight)
     }
 
     /// The finger has been down long enough: the story stops and stays stopped
@@ -521,7 +481,6 @@ private extension StoryDetailView {
         if isComposerActive {
             isComposerActive = false
         }
-        viewModel.setComposerActive(false)
         if keyboardManager.isKeyboardOpen {
             dismissKeyboard()
         }
@@ -786,14 +745,5 @@ extension View {
         } else {
             self.background(Color.black.opacity(0.3))
         }
-    }
-}
-
-/// Height of the story's bottom controls (title row and reply composer).
-struct StoryBottomControlsHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
     }
 }

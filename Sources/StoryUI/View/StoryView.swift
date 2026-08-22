@@ -11,9 +11,6 @@ import AVFoundation
 public struct StoryView: View {
     
     @StateObject private var viewModel = StoryViewModel()
-    /// Story data that arrived while the composer was open, applied as soon as
-    /// the user is done writing.
-    @State private var pendingStories: [StoryUIModel]?
     @Binding private var isPresented: Bool
     @Binding private var isPaused: Bool
 
@@ -54,7 +51,7 @@ public struct StoryView: View {
         if isPresented {
             ZStack {
                 Color.black.ignoresSafeArea()
-                TabView(selection: composerSafeSelection) {
+                TabView(selection: $viewModel.currentStoryUser) {
                     ForEach(viewModel.stories) { model in
                         StoryDetailView(
                             viewModel: viewModel,
@@ -78,48 +75,15 @@ public struct StoryView: View {
             .onAppear {
                 startStory()
             }
-            .onChange(of: stories) { updated in
-                /*
-                 Story data keeps arriving while the viewer is open (view
-                 counts, reactions, avatars). Handing those updates to the
-                 TabView rebuilds its pages, which is exactly what used to tear
-                 down the composer seconds after the last keystroke. While
-                 someone is writing, the update waits.
-                */
-                guard !viewModel.isComposerActive else {
-                    pendingStories = updated
-                    return
-                }
-
-                updateStoriesFromParent()
-            }
-            .onChange(of: viewModel.composerClosedCount) { _ in
-                guard pendingStories != nil else { return }
-                pendingStories = nil
+            .onChange(of: stories) { _ in
                 updateStoriesFromParent()
             }
             .onDisappear {
-                // The viewer is gone: nothing may stay locked behind a
-                // composer flag that has no composer left.
-                viewModel.setComposerActive(false)
-                pendingStories = nil
                 stopVideo()
             }
         }
     }
-
-    /// The visible story may not change while the reply composer is open, so
-    /// paging writes are dropped instead of being applied and undone.
-    private var composerSafeSelection: Binding<String> {
-        Binding(
-            get: { viewModel.currentStoryUser },
-            set: { newValue in
-                guard !viewModel.isComposerActive else { return }
-                viewModel.currentStoryUser = newValue
-            }
-        )
-    }
-
+    
     private func startStory() {
         guard !stories.isEmpty else { return }
         let index = stories.indices.contains(selectedIndex) ? selectedIndex : 0

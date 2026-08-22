@@ -16,15 +16,14 @@ struct MessageView: View {
     /// True exactly while this composer holds the keyboard focus. The story
     /// stays paused (and the dimming overlay visible) for that whole time.
     @Binding var isComposerActive: Bool
-    /// Survives this view: a draft is never lost to a rebuild of the page.
-    let draftStore: StoryDraftStore
     let userClosure: UserCompletionHandler?
 
     // MARK: Private Properties
     @State private var text: String = ""
     @State private var likeButtonTapped: Bool = false
+    @State private var clearText: Bool = false
 
-    @FocusState private var isInputFocused: Bool
+    @FocusState private var isMessageFocused: Bool
 
     private var hasMessageText: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -52,40 +51,22 @@ struct MessageView: View {
         // The like button must always reflect the persisted state of the
         // story that is currently on screen, both on first appearance and
         // whenever the story (or its like state) is refreshed from the host.
-        .onAppear {
-            likeButtonTapped = story.isLiked
-            restoreDraft(for: story.id)
-        }
-        .onChange(of: story.id) { newID in
-            likeButtonTapped = story.isLiked
-            restoreDraft(for: newID)
-        }
+        .onAppear { likeButtonTapped = story.isLiked }
+        .onChange(of: story.id) { _ in likeButtonTapped = story.isLiked }
         .onChange(of: story.isLiked) { likeButtonTapped = $0 }
         //focus is the single source of truth for "the composer is active"
-        .onChange(of: isInputFocused) { isComposerActive = $0 }
+        .onChange(of: isMessageFocused) { isComposerActive = $0 }
         //the host can close the composer (overlay tap, page change): follow it
         .onChange(of: isComposerActive) { active in
-            if !active, isInputFocused {
-                isInputFocused = false
+            if !active, isMessageFocused {
+                isMessageFocused = false
             }
         }
-        /*
-         Only the story really leaving the screen ends the composer. The typed
-         text stays in the draft store, so coming back restores it.
-        */
         .onDisappear { isComposerActive = false }
     }
 }
 
 private extension MessageView {
-    func restoreDraft(for storyID: String) {
-        let stored = draftStore.draft(for: storyID)
-        if text != stored {
-            text = stored
-        }
-        showEmoji = stored.isEmpty
-    }
-
     var onCommitAction: () -> Void {
         return {
             let message = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -94,9 +75,8 @@ private extension MessageView {
             userClosure?(story, message, nil, false)
 
             text = ""
-            draftStore.clearDraft(for: story.id)
             showEmoji = true
-            isInputFocused = false   // dismiss keyboard
+            isMessageFocused = false   // dismiss keyboard
         }
     }
 
@@ -162,13 +142,12 @@ private extension MessageView {
             .placeholder(when: text.isEmpty, view: {
                 Text(placeholder).foregroundColor(.white.opacity(0.85))
             })
-            /*
-             The draft lives outside this view, so a rebuild of the story page
-             cannot take the typed text with it.
-            */
             .onChange(of: text, perform: { newValue in
-                draftStore.setDraft(newValue, for: story.id)
                 showEmoji = newValue.isEmpty
+            })
+            .onChange(of: clearText, perform: { newValue in
+                text = ""
+                showEmoji = true
             })
             .font(.system(size: 17))
             .foregroundColor(.white)
@@ -178,7 +157,7 @@ private extension MessageView {
                 Capsule()
                     .stroke(Color.white.opacity(0.9), lineWidth: 1.2)
             )
-            .focused($isInputFocused)
+            .focused($isMessageFocused)
             if hasMessageText {
                 sendButton
             } else {
@@ -190,12 +169,6 @@ private extension MessageView {
 
 struct MessageView_Previews: PreviewProvider {
     static var previews: some View {
-        MessageView(
-            story: Story(mediaURL: "", date: Date(), config: StoryConfiguration(mediaType: .image)),
-            showEmoji: .constant(true),
-            isComposerActive: .constant(false),
-            draftStore: StoryDraftStore(),
-            userClosure: nil
-        )
+        MessageView(story: Story(mediaURL: "", date: Date(), config: StoryConfiguration(mediaType: .image)), showEmoji: .constant(true), isComposerActive: .constant(false), userClosure: nil)
     }
 }

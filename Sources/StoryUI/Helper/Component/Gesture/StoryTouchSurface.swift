@@ -33,9 +33,6 @@ enum StoryTouchZone {
 struct StoryTouchSurface: UIViewRepresentable {
     /// Story navigation is off while something else owns the screen.
     var isEnabled: Bool
-    /// Locks the paging scroll view this surface lives in, so the story cannot
-    /// change while the reply composer is open.
-    var locksPaging: Bool
     /// How long the finger has to stay down before the story pauses. Short
     /// enough to feel immediate, long enough that a tap does not flicker.
     var holdDelay: TimeInterval = 0.2
@@ -54,17 +51,12 @@ struct StoryTouchSurface: UIViewRepresentable {
         apply(to: view)
     }
 
-    static func dismantleUIView(_ view: StoryTouchSurfaceView, coordinator: ()) {
-        view.locksPaging = false
-    }
-
     private func apply(to view: StoryTouchSurfaceView) {
         view.holdDelay = holdDelay
         view.onHoldBegan = onHoldBegan
         view.onSessionEnded = onSessionEnded
         view.onTap = onTap
         view.isTrackingEnabled = isEnabled
-        view.locksPaging = locksPaging
     }
 }
 
@@ -87,15 +79,7 @@ final class StoryTouchSurfaceView: UIView {
         didSet { recognizer.isEnabled = isTrackingEnabled }
     }
 
-    var locksPaging = false {
-        didSet {
-            guard locksPaging != oldValue else { return }
-            applyPagingLock()
-        }
-    }
-
     private let recognizer = StoryTouchSessionRecognizer()
-    private weak var lockedScrollView: UIScrollView?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -107,50 +91,6 @@ final class StoryTouchSurfaceView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-
-        if window == nil {
-            // Leaving the hierarchy must not strand a disabled scroll view.
-            releasePagingLock()
-        } else {
-            applyPagingLock()
-        }
-    }
-
-    deinit {
-        lockedScrollView?.isScrollEnabled = true
-    }
-
-    // MARK: Paging lock
-
-    private func applyPagingLock() {
-        guard locksPaging else {
-            releasePagingLock()
-            return
-        }
-
-        guard lockedScrollView == nil, let scrollView = enclosingScrollView() else { return }
-
-        lockedScrollView = scrollView
-        scrollView.isScrollEnabled = false
-    }
-
-    private func releasePagingLock() {
-        lockedScrollView?.isScrollEnabled = true
-        lockedScrollView = nil
-    }
-
-    private func enclosingScrollView() -> UIScrollView? {
-        var candidate: UIView? = superview
-
-        while let current = candidate {
-            if let scrollView = current as? UIScrollView { return scrollView }
-            candidate = current.superview
-        }
-
-        return nil
-    }
 }
 
 /// Reports the raw touch session on the story surface.
