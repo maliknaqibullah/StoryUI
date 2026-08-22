@@ -233,7 +233,7 @@ struct StoryDetailView: View {
              The whole screen has to know: paging, incoming story updates and
              playback all stand still while someone is writing.
             */
-            viewModel.isComposerActive = active
+            viewModel.setComposerActive(active)
 
             //the composer owns the story while it is active
             if active,
@@ -493,9 +493,7 @@ private extension StoryDetailView {
         if isComposerActive {
             isComposerActive = false
         }
-        if viewModel.isComposerActive {
-            viewModel.isComposerActive = false
-        }
+        viewModel.setComposerActive(false)
         if keyboardManager.isKeyboardOpen {
             dismissKeyboard()
         }

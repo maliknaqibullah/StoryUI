@@ -93,15 +93,15 @@ public struct StoryView: View {
 
                 updateStoriesFromParent()
             }
-            .onChange(of: viewModel.isComposerActive) { isActive in
-                guard !isActive, pendingStories != nil else { return }
+            .onChange(of: viewModel.composerClosedCount) { _ in
+                guard pendingStories != nil else { return }
                 pendingStories = nil
                 updateStoriesFromParent()
             }
             .onDisappear {
                 // The viewer is gone: nothing may stay locked behind a
                 // composer flag that has no composer left.
-                viewModel.isComposerActive = false
+                viewModel.setComposerActive(false)
                 pendingStories = nil
                 stopVideo()
             }

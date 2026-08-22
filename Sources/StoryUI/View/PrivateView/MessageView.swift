@@ -23,7 +23,8 @@ struct MessageView: View {
     // MARK: Private Properties
     @State private var text: String = ""
     @State private var likeButtonTapped: Bool = false
-    @State private var isInputFocused: Bool = false
+
+    @FocusState private var isInputFocused: Bool
 
     private var hasMessageText: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -154,23 +155,30 @@ private extension MessageView {
 
     func messageViewBuilder(_ config: StoryInteractionConfig?, _ placeholder: String) -> some View {
         HStack(spacing: 12) {
-            StoryComposerTextField(
-                text: $text,
-                isFocused: $isInputFocused,
-                placeholder: placeholder,
-                onSubmit: onCommitAction
-            )
-            .onChange(of: text) { newValue in
+            TextField("",
+                      text: $text,
+                      onCommit: onCommitAction)
+
+            .placeholder(when: text.isEmpty, view: {
+                Text(placeholder).foregroundColor(.white.opacity(0.85))
+            })
+            /*
+             The draft lives outside this view, so a rebuild of the story page
+             cannot take the typed text with it.
+            */
+            .onChange(of: text, perform: { newValue in
                 draftStore.setDraft(newValue, for: story.id)
                 showEmoji = newValue.isEmpty
-            }
+            })
+            .font(.system(size: 17))
+            .foregroundColor(.white)
             .frame(height: inputHeight)
             .padding(.horizontal, 16)
             .overlay(
                 Capsule()
                     .stroke(Color.white.opacity(0.9), lineWidth: 1.2)
             )
-            .contentShape(Capsule())
+            .focused($isInputFocused)
             if hasMessageText {
                 sendButton
             } else {
