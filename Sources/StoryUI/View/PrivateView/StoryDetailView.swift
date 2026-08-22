@@ -30,7 +30,13 @@ struct StoryDetailView: View {
     
     
     // MARK: Private Properties
-    @ObservedObject private var keyboardManager = KeyboardManager()
+    /*
+     Must be owned by this view. As an @ObservedObject it was rebuilt on every
+     re-render, so `isKeyboardOpen` silently fell back to false while the user
+     was still typing: the progress timer resumed, the story advanced and the
+     composer disappeared out from under the visible keyboard.
+    */
+    @StateObject private var keyboardManager = KeyboardManager()
     @State private var state: MediaState = .notStarted
     @State private var player = AVPlayer()
     @State private var animate = false
@@ -42,10 +48,28 @@ struct StoryDetailView: View {
     @State private var showEmoji: Bool = true
     /// Stories already reported as displayed, so each one reports exactly once.
     @State private var displayedStoryIDs: Set<String> = []
+    /// The reply composer holds the keyboard focus.
+    @State private var isComposerActive: Bool = false
+    /// A finger is on the story and this view is the one that paused it.
+    @State private var isPausedByTouch: Bool = false
+    /// The pause state that was in effect before the finger went down, so a
+    /// release restores it instead of blindly resuming a story that some other
+    /// feature (viewers sheet, delete dialog) wants stopped.
+    @State private var wasPausedBeforeTouch: Bool = false
 
     private var isMyStory: Bool {
           model.id == myUserID
       }
+
+    /*
+     One state for "this story must not move on". Everything that advances the
+     story (progress timer, video playback) checks this single value, so the
+     composer, the keyboard and an externally requested pause can never end up
+     disagreeing about whether the story is running.
+    */
+    private var isStoryHalted: Bool {
+        isPaused || isComposerActive || keyboardManager.isKeyboardOpen
+    }
     private var messageViewPosition: CGFloat {
         return -keyboardManager.currentHeight
     }
@@ -74,7 +98,22 @@ struct StoryDetailView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .ignoresSafeArea()
 
-                    tapStory()
+                    storyTouchLayer()
+
+                    /*
+                     Subtle separation between the story and the typing state.
+                     Sits above the story and its tap layer, below the composer.
+                    */
+                    if isComposerActive {
+                        Color.black
+                            .opacity(0.22)
+                            .ignoresSafeArea()
+                            .transition(.opacity)
+                            .onTapGesture {
+                                closeComposer()
+                            }
+                    }
+
                     VStack {
                         Spacer()
                         LinearGradient(
@@ -153,8 +192,22 @@ struct StoryDetailView: View {
   
             
         }
+        .animation(.easeInOut(duration: 0.2), value: isComposerActive)
         .onChange(of: keyboardManager.isKeyboardOpen) { isOpen in
             if isOpen {
+                /*
+                 A visible keyboard on a screen without a composer (own story,
+                 page changed underneath) is exactly the broken state: get rid
+                 of the keyboard instead of leaving it floating there.
+                 */
+                guard !isMyStory else {
+                    dismissKeyboard()
+                    return
+                }
+
+                //keyboard and composer are one state, never one without the other
+                isComposerActive = true
+
                 /*
                  Pause video directly without changing the shared
                  isPaused state.
@@ -163,16 +216,43 @@ struct StoryDetailView: View {
                     .config.mediaType == .video {
                     player.pause()
                 }
-            } else if !isPaused {
+            } else {
+                isComposerActive = false
+
                 /*
                  Resume only when another feature has not requested
                  that the story remain paused.
                  */
-                playVideo()
+                if !isPaused {
+                    playVideo()
+                }
             }
         }
+        .onChange(of: isComposerActive) { active in
+            /*
+             The whole screen has to know: paging, incoming story updates and
+             playback all stand still while someone is writing.
+            */
+            viewModel.isComposerActive = active
+
+            //the composer owns the story while it is active
+            if active,
+               model.stories[getCurrentIndex()].config.mediaType == .video {
+                player.pause()
+            }
+        }
+        .onDisappear {
+            /*
+             A paging TabView also sends onDisappear for pages it merely
+             recycles. Only the page that is no longer the current story may
+             tear the composer down — otherwise the keyboard closed under a user
+             who was still typing.
+            */
+            guard viewModel.currentStoryUser != model.id else { return }
+            closeComposer()
+        }
         .onChange(of: viewModel.currentStoryUser) { newValue in
-            dismissKeyboard()
+            closeComposer()
 
             NotificationCenter.default.post(
                 name: .stopVideo,
@@ -184,8 +264,7 @@ struct StoryDetailView: View {
             resetProgress()
 
             DispatchQueue.main.async {
-                if !isPaused &&
-                   !keyboardManager.isKeyboardOpen {
+                if !isStoryHalted {
                     playVideo()
                 }
             }
@@ -208,7 +287,7 @@ struct StoryDetailView: View {
                 return
             }
 
-            if paused || keyboardManager.isKeyboardOpen {
+            if isStoryHalted {
                 player.pause()
             } else {
                 playVideo()
@@ -344,6 +423,8 @@ private extension StoryDetailView {
         MessageView(
             story: story,
             showEmoji: $showEmoji,
+            isComposerActive: $isComposerActive,
+            draftStore: viewModel.draftStore,
             userClosure: userClosure
         )
         .padding()
@@ -351,68 +432,75 @@ private extension StoryDetailView {
         .offset(y: messageViewPosition)
     }
     
-    @ViewBuilder
-    func tapStory() -> some View {
-        HStack(spacing: 0) {
-            Rectangle()
-                .fill(.black.opacity(0.01))
-                .onTapGesture {
-                    tapPreviousStory()
-                }
-                .onLongPressGesture(
-                    minimumDuration: 0.2,
-                    pressing: { isPressing in
-                        handleStoryPress(
-                            isPressing
-                        )
-                    },
-                    perform: {}
-                )
+    /*
+     Every touch on the story goes through one UIKit layer.
 
-            Rectangle()
-                .fill(.black.opacity(0.01))
-                .onTapGesture {
+     SwiftUI's `onLongPressGesture(pressing:)` was the cause of the pause
+     breaking: it is a *press* gesture, so it cancels as soon as the finger
+     travels a few points and reports `pressing = false` while the finger is
+     still on the screen — the story resumed under the user's thumb. The touch
+     layer below ties the pause to the touch session instead, and it also owns
+     the zone taps so there is no second gesture that could cancel the first.
+    */
+    @ViewBuilder
+    func storyTouchLayer() -> some View {
+        StoryTouchSurface(
+            isEnabled: !isComposerActive && !keyboardManager.isKeyboardOpen,
+            locksPaging: isComposerActive || keyboardManager.isKeyboardOpen,
+            onHoldBegan: { beginTouchPause() },
+            onSessionEnded: { endTouchSession() },
+            onTap: { zone in
+                switch zone {
+                case .leading:
+                    tapPreviousStory()
+                case .trailing:
                     tapNextStory()
                 }
-                .onLongPressGesture(
-                    minimumDuration: 0.2,
-                    pressing: { isPressing in
-                        handleStoryPress(
-                            isPressing
-                        )
-                    },
-                    perform: {}
-                )
-        }
-
-        /*
-         While the message keyboard is open, the story navigation
-         layer must not receive taps or long presses.
-         */
-        .allowsHitTesting(
-            !keyboardManager.isKeyboardOpen
+            }
         )
     }
-    
-    func handleStoryPress(
-        _ isPressing: Bool
-    ) {
-        if isPressing {
-            pauseStory()
-            return
-        }
 
-        /*
-         A touch release must never resume playback while the user
-         is still typing.
-         */
-        guard !keyboardManager.isKeyboardOpen else {
-            pauseStory()
-            return
-        }
+    /// The finger has been down long enough: the story stops and stays stopped
+    /// for as long as the touch lasts.
+    func beginTouchPause() {
+        guard !isPausedByTouch else { return }
 
-        resumeStory()
+        wasPausedBeforeTouch = isPaused
+        isPausedByTouch = true
+        pauseStory()
     }
+
+    /// The touch ended (lift or system cancel) — the only thing that may undo
+    /// a touch pause.
+    func endTouchSession() {
+        guard isPausedByTouch else { return }
+
+        isPausedByTouch = false
+
+        // A composer opened during the touch keeps the story stopped.
+        guard !isComposerActive, !keyboardManager.isKeyboardOpen else { return }
+
+        if wasPausedBeforeTouch {
+            pauseStory()
+        } else {
+            resumeStory()
+        }
+    }
+
+    /// Tears the composer down as one unit: focus, keyboard and overlay go away
+    /// together, and only afterwards may the story run again.
+    func closeComposer() {
+        if isComposerActive {
+            isComposerActive = false
+        }
+        if viewModel.isComposerActive {
+            viewModel.isComposerActive = false
+        }
+        if keyboardManager.isKeyboardOpen {
+            dismissKeyboard()
+        }
+    }
+    
     func resetProgress() {
         timerProgress = 0
     }
@@ -491,8 +579,7 @@ private extension StoryDetailView {
     
     func startProgress() {
         guard !isTimerRunning,
-              !isPaused,
-              !keyboardManager.isKeyboardOpen
+              !isStoryHalted
         else {
             return
         }
@@ -536,8 +623,8 @@ private extension StoryDetailView {
     }
     
     func tapNextStory() {
-        guard !keyboardManager.isKeyboardOpen else {
-            pauseStory()
+        guard !isComposerActive, !keyboardManager.isKeyboardOpen else {
+            closeComposer()
             return
         }
 
@@ -557,8 +644,8 @@ private extension StoryDetailView {
     }
 
     func tapPreviousStory() {
-        guard !keyboardManager.isKeyboardOpen else {
-            pauseStory()
+        guard !isComposerActive, !keyboardManager.isKeyboardOpen else {
+            closeComposer()
             return
         }
 
@@ -618,6 +705,9 @@ private extension StoryDetailView {
     }
     
     func playVideo() {
+        //never start playback behind an active composer
+        guard !isStoryHalted else { return }
+
         let index = getCurrentIndex()
         let currentUser = viewModel.currentStoryUser == model.id
         let video = model.stories[index].config.mediaType == .video
@@ -632,7 +722,7 @@ private extension StoryDetailView {
     }
     
     func configureTapScreen() {
-        switch (keyboardManager.isKeyboardOpen, isAnimationStarted) {
+        switch (isComposerActive || keyboardManager.isKeyboardOpen, isAnimationStarted) {
         case (true, _):
             isTapDisabled = true
         case (false, true):

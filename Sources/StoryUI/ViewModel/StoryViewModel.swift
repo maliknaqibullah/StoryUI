@@ -11,7 +11,14 @@ final class StoryViewModel: ObservableObject {
     
     @Published var currentStoryUser: String = ""
     @Published var stories: [StoryUIModel] = []
-    
+    /// True while a reply composer holds the keyboard focus. Everything that
+    /// could pull the story out from under the user — paging, incoming story
+    /// updates, playback — reads this one value.
+    @Published var isComposerActive: Bool = false
+
+    /// Unsent reply texts. Not published: typing must not re-render the story.
+    let draftStore = StoryDraftStore()
+
     func getVideoProgressBarFrame(duration: Double) -> Double {
         return duration * 0.1 // convert any second to  between 0 - 1 second
     }
