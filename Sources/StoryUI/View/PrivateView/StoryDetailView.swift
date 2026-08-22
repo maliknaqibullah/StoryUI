@@ -193,6 +193,19 @@ struct StoryDetailView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: isComposerActive)
         .onChange(of: keyboardManager.isKeyboardOpen) { isOpen in
+            /*
+             Every page in the TabView is alive at once and each one owns a
+             KeyboardManager that listens to the *global* keyboard
+             notifications. So a page that is not on screen — the user's own
+             story in particular — used to react to a keyboard opened by the
+             reply field of the page that *is* on screen, and its `isMyStory`
+             branch below dismissed it again: the composer took focus, the
+             screen dimmed for a moment and the keyboard never appeared.
+
+             Only the visible page may act on the keyboard.
+            */
+            guard viewModel.currentStoryUser == model.id else { return }
+
             if isOpen {
                 /*
                  A visible keyboard on a screen without a composer (own story,
