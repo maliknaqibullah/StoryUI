@@ -20,6 +20,10 @@ public struct StoryView: View {
     let onUserChanged: ((String) -> Void)?
     let onAvatarTapped: ((String) -> Void)?
     let onDeleteTapped: ((String) -> Void)?
+    /// The "..." header button was tapped, carrying the id of the story that is
+    /// visible right now. Only shown when `showsMenuButton` is true.
+    let onMenuTapped: ((String) -> Void)?
+    let showsMenuButton: Bool
     /// Called once per story, when that story is actually rendered on screen.
     /// Parameters: the user (model) id, then the story id.
     let onStoryDisplayed: ((String, String) -> Void)?
@@ -33,6 +37,8 @@ public struct StoryView: View {
         onUserChanged: ((String) -> Void)? = nil,
         onAvatarTapped: ((String) -> Void)? = nil,
         onDeleteTapped: ((String) -> Void)? = nil,
+        onMenuTapped: ((String) -> Void)? = nil,
+        showsMenuButton: Bool = false,
         onStoryDisplayed: ((String, String) -> Void)? = nil,
         myUserID: String? = nil
     ) {
@@ -44,6 +50,8 @@ public struct StoryView: View {
         self.onUserChanged = onUserChanged
         self.onAvatarTapped = onAvatarTapped
         self.onDeleteTapped = onDeleteTapped
+        self.onMenuTapped = onMenuTapped
+        self.showsMenuButton = showsMenuButton
         self.onStoryDisplayed = onStoryDisplayed
         self.myUserID = myUserID
     }
@@ -62,6 +70,8 @@ public struct StoryView: View {
                             onUserChanged: onUserChanged,
                             onAvatarTapped: onAvatarTapped,
                             onDeleteTapped: onDeleteTapped,
+                            onMenuTapped: onMenuTapped,
+                            showsMenuButton: showsMenuButton,
                             onStoryDisplayed: onStoryDisplayed,
                             myUserID: myUserID
                         )

@@ -25,6 +25,10 @@ struct StoryDetailView: View {
     let onUserChanged: ((String) -> Void)?
     let onAvatarTapped: ((String) -> Void)?
     let onDeleteTapped: ((String) -> Void)?
+    /// The "..." header button was tapped. Carries the id of the story that is
+    /// visible right now, so the host never acts on a stale story.
+    let onMenuTapped: ((String) -> Void)?
+    let showsMenuButton: Bool
     let onStoryDisplayed: ((String, String) -> Void)?
     let myUserID: String?
     
@@ -304,6 +308,13 @@ struct StoryDetailView: View {
             let currentStoryID = model.stories[safe: getCurrentIndex()]?.id ?? ""
             onDeleteTapped?(currentStoryID)
         }
+        //every page of the TabView receives this, only the visible one answers,
+        //and it answers with the story it is showing at this very moment
+        .onReceive(NotificationCenter.default.publisher(for: .storyMenuTapped)) { _ in
+            guard model.id == viewModel.currentStoryUser else { return }
+            let currentStoryID = model.stories[safe: getCurrentIndex()]?.id ?? ""
+            onMenuTapped?(currentStoryID)
+        }
     }
 }
 
@@ -396,6 +407,7 @@ private extension StoryDetailView {
                     name: model.user.name,
                     date: model.stories[safe: index]?.date ?? Date(),
                     isMyStory: isMyStory,
+                    showsMenuButton: showsMenuButton,
                     isPresented: $isPresented,
                     onAvatarTapped: {
                         guard !isMyStory else {

@@ -13,6 +13,8 @@ struct UserView: View {
     var name: String
     var date: Date
     var isMyStory: Bool = false
+    /// The host wants the "..." menu button of this header row.
+    var showsMenuButton: Bool = false
     let onAvatarTapped: (() -> Void)?
     @Binding var isPresented: Bool
     
@@ -21,6 +23,7 @@ struct UserView: View {
         name: String,
         date: Date,
         isMyStory: Bool,
+        showsMenuButton: Bool = false,
         isPresented: Binding<Bool>,
         onAvatarTapped: (() -> Void)? = nil
     ) {
@@ -28,6 +31,7 @@ struct UserView: View {
         self.name = name
         self.date = date
         self.isMyStory = isMyStory
+        self.showsMenuButton = showsMenuButton
         self._isPresented = isPresented
         self.onAvatarTapped = onAvatarTapped
     }
@@ -62,6 +66,20 @@ struct UserView: View {
             }
             
             Spacer()
+
+            if showsMenuButton {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 18, weight: .medium))
+                    .rotationEffect(.degrees(90))
+                    .foregroundColor(.white)
+                    .padding(12)
+                    .background(Color.black.opacity(0.45))
+                    .clipShape(Circle())
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        NotificationCenter.default.post(name: .storyMenuTapped, object: nil)
+                    }
+            }
 
             if isMyStory {
                 Image(systemName: "trash")
