@@ -29,6 +29,10 @@ struct StoryDetailView: View {
     /// visible right now, so the host never acts on a stale story.
     let onMenuTapped: ((String) -> Void)?
     let showsMenuButton: Bool
+    /// Standalone trash button of an own story, see UserView.
+    var showsDeleteButton: Bool = true
+    /// Standalone close button, see UserView.
+    var showsCloseButton: Bool = true
     let onStoryDisplayed: ((String, String) -> Void)?
     let myUserID: String?
     
@@ -408,6 +412,8 @@ private extension StoryDetailView {
                     date: model.stories[safe: index]?.date ?? Date(),
                     isMyStory: isMyStory,
                     showsMenuButton: showsMenuButton,
+                    showsDeleteButton: showsDeleteButton,
+                    showsCloseButton: showsCloseButton,
                     isPresented: $isPresented,
                     onAvatarTapped: {
                         guard !isMyStory else {

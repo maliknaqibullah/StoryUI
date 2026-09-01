@@ -15,6 +15,12 @@ struct UserView: View {
     var isMyStory: Bool = false
     /// The host wants the "..." menu button of this header row.
     var showsMenuButton: Bool = false
+    /// The standalone trash button of an own story. Hosts that offer deletion
+    /// inside their own "..." menu switch it off to keep one action surface.
+    var showsDeleteButton: Bool = true
+    /// The standalone close button. Hosts relying on the pull down gesture
+    /// alone switch it off.
+    var showsCloseButton: Bool = true
     let onAvatarTapped: (() -> Void)?
     @Binding var isPresented: Bool
     
@@ -24,6 +30,8 @@ struct UserView: View {
         date: Date,
         isMyStory: Bool,
         showsMenuButton: Bool = false,
+        showsDeleteButton: Bool = true,
+        showsCloseButton: Bool = true,
         isPresented: Binding<Bool>,
         onAvatarTapped: (() -> Void)? = nil
     ) {
@@ -32,6 +40,8 @@ struct UserView: View {
         self.date = date
         self.isMyStory = isMyStory
         self.showsMenuButton = showsMenuButton
+        self.showsDeleteButton = showsDeleteButton
+        self.showsCloseButton = showsCloseButton
         self._isPresented = isPresented
         self.onAvatarTapped = onAvatarTapped
     }
@@ -81,7 +91,7 @@ struct UserView: View {
                     }
             }
 
-            if isMyStory {
+            if isMyStory && showsDeleteButton {
                 Image(systemName: "trash")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.white)
@@ -94,17 +104,19 @@ struct UserView: View {
                     }
             }
 
-            Image(systemName: "xmark")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundColor(.white)
-                .padding(12)
-                .background(Color.black.opacity(0.45))   // ✅ ADD
-               .clipShape(Circle())
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    NotificationCenter.default.post(name: .replaceCurrentItem, object: nil)
-                    isPresented = false
-                }
+            if showsCloseButton {
+                Image(systemName: "xmark")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(12)
+                    .background(Color.black.opacity(0.45))
+                    .clipShape(Circle())
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        NotificationCenter.default.post(name: .replaceCurrentItem, object: nil)
+                        isPresented = false
+                    }
+            }
         }
         .padding(.horizontal)
     }
