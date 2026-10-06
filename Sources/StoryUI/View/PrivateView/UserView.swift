@@ -123,29 +123,35 @@ struct UserView: View {
 }
 
 
+/// The age of a story ("3h ago"), kept current by the minute.
+///
+/// The text is computed from the date on every render, with only the clock in state. It used to be
+/// the text itself that was state, filled in `onAppear` and by the timer: moving on to the next story
+/// hands this view a new date, but SwiftUI keeps the view (and its state) in place and does not call
+/// `onAppear` again, so every story of a user showed the first story's age until the timer fired.
 public struct RelativeTimeText: View {
     public let date: Date
-    @State private var text: String = ""
-    
+    @State private var now = Date()
+
     public init(date: Date) {
         self.date = date
     }
-    
+
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "MMM d"
         return f
     }()
-    
+
     public var body: some View {
-        Text(text)
-            .onAppear { text = formatted() }
-            .onReceive(timer) { _ in text = formatted() }
+        Text(formatted())
+            .onAppear { now = Date() }
+            .onReceive(timer) { _ in now = Date() }
     }
-    
+
     private func formatted() -> String {
-        let diff = Date().timeIntervalSince(date)
+        let diff = now.timeIntervalSince(date)
         switch diff {
         case ..<60:     return "Just now"
         case ..<3600:   return "\(Int(diff / 60))m ago"
