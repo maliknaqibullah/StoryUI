@@ -42,6 +42,10 @@ enum MediaState {
     case restart
     case ready
     case stopped
+    /// The video played to its end.
+    case finished
+    /// The video cannot be played; the story runs for the default time instead.
+    case failed
 }
 
 

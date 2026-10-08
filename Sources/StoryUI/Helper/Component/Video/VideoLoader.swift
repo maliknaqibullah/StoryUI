@@ -22,78 +22,155 @@ final class PlayerView: UIView {
     // MARK: Private Properties
     private let playerLayer = AVPlayerLayer()
     private var url: URL?
-    private let cacheManager: CacheManager
 
-    private var observation: NSKeyValueObservation?
+    private var statusObservation: NSKeyValueObservation?
+    private var timeControlObservation: NSKeyValueObservation?
+    private var endObserver: NSObjectProtocol?
+    private let failureLabel = UILabel()
 
     // MARK: - Initializers
     override init(frame: CGRect) {
-        self.cacheManager = CacheManager()
         super.init(frame: frame)
         self.layer.cornerRadius = 12
         self.clipsToBounds = true
         setupPlayer()
+        setupFailureLabel()
+        addObservers()
     }
 
     deinit {
-        observation = nil
-        player = nil
+        NotificationCenter.default.removeObserver(self)
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
+        }
     }
 
     required init?(coder: NSCoder) { nil }
 
+    /// Streams a story video. The item is handed to the player at once: playback starts as soon as
+    /// enough of the file has arrived, the whole file is never downloaded first.
     func startVideo(url: URL?) {
-        guard let validatedUrl = url else { return }
+        guard let url else { return }
         if self.url == url { return }
-        self.url = validatedUrl
-        addActivityIndicatory()
-        // stop video if it's playing before video request
+        self.url = url
+        // stop video if it's playing before the next one is loaded
         stopVideo()
-        guard let url = url else { return }
-        cacheManager.loadVideo(from: url) { [weak self] result in
-            switch result {
-            case .success(let url):
-                self?.setupPlayer(url)
-            case .failure(let error):
-                print(error)
-            }
+        guard let player else { return }
+
+        failureLabel.isHidden = true
+        state = .notStarted
+        duration = 0
+        addActivityIndicatory()
+
+        let asset = StoryUIMediaProvider.videoAsset?(url) ?? AVURLAsset(url: url)
+        let item = AVPlayerItem(asset: asset)
+        // Enough to bridge short network hiccups, not so much that a long story buffers far ahead.
+        item.preferredForwardBufferDuration = 5
+        observe(item, of: player)
+        player.automaticallyWaitsToMinimizeStalling = true
+        player.replaceCurrentItem(with: item)
+
+        playerLayer.player = player
+        playerLayer.videoGravity = .resizeAspect
+        playerLayer.backgroundColor = UIColor.black.cgColor
+        if playerLayer.superlayer == nil {
+            contentView.layer.addSublayer(playerLayer)
         }
     }
 
+    /// The view is going away for good: nothing of it may keep playing.
+    func tearDown() {
+        stopObservingItem()
+        url = nil
+        player?.pause()
+        player?.replaceCurrentItem(with: nil)
+        playerLayer.player = nil
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        playerLayer.frame = contentView.bounds
+        CATransaction.commit()
+    }
+
+    override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
+        // Off screen (the viewer closed or closing) means silent, whatever the SwiftUI state says.
+        if newWindow == nil {
+            player?.pause()
+        }
+    }
 }
 
 //MARK: - Configure
 
 private extension PlayerView {
-    func setupPlayer(_ url: URL) {
-        self.player?.replaceCurrentItem(with: nil)
-        self.player?.replaceCurrentItem(with: .init(url: url))
 
-        observation = player?.observe(\.timeControlStatus, options: .new) { [weak self] player, change in
-            guard let self else { return }
-            if player.timeControlStatus == .playing {
-                self.removeActivityIndicatory()
-                self.state = .started
-                self.mediaState?(self.state, self.duration)
-            } else if player.timeControlStatus == .waitingToPlayAtSpecifiedRate {
-                self.addActivityIndicatory()
+    func observe(_ item: AVPlayerItem, of player: AVPlayer) {
+        stopObservingItem()
+
+        statusObservation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
+            DispatchQueue.main.async {
+                guard let self, self.player?.currentItem === item else { return }
+                switch item.status {
+                case .readyToPlay:
+                    let seconds = item.duration.seconds
+                    self.duration = seconds.isFinite && seconds > 0 ? seconds : Constant.storySecond
+                    self.state = .ready
+                    self.mediaState?(.ready, self.duration)
+                case .failed:
+                    print("StoryUI: video failed: \(String(describing: item.error))")
+                    self.removeActivityIndicatory()
+                    self.failureLabel.isHidden = false
+                    self.state = .failed
+                    self.mediaState?(.failed, Constant.storySecond)
+                default:
+                    break
+                }
             }
         }
 
-        self.player?.automaticallyWaitsToMinimizeStalling = false
-        self.getVideoLength(videoURL: url)
-        self.playerLayer.player = self.player
-        self.playerLayer.videoGravity = .resizeAspect
-        self.playerLayer.backgroundColor = UIColor.black.cgColor
-        playerLayer.removeFromSuperlayer()
-        self.contentView.layer.addSublayer(self.playerLayer)
-        state = .ready
-        mediaState?(.ready, duration)
-        addObserverToVideo()
+        timeControlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+            DispatchQueue.main.async {
+                guard let self, self.player === player, player.currentItem === item else { return }
+                switch player.timeControlStatus {
+                case .playing:
+                    // Safety net: a player that is not on screen never plays.
+                    guard self.window != nil else {
+                        player.pause()
+                        return
+                    }
+                    self.removeActivityIndicatory()
+                    self.state = .started
+                    self.mediaState?(.started, self.duration)
+                case .waitingToPlayAtSpecifiedRate:
+                    // Buffering: the story waits for the network, and shows it.
+                    self.addActivityIndicatory()
+                default:
+                    self.removeActivityIndicatory()
+                }
+            }
+        }
+
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.mediaState?(.finished, self.duration)
+        }
     }
 
-    func getVideoLength(videoURL: URL) {
-        duration = AVURLAsset(url: videoURL).duration.seconds
+    func stopObservingItem() {
+        statusObservation = nil
+        timeControlObservation = nil
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
+            self.endObserver = nil
+        }
     }
 
     func stopAndRestartVideo() {
@@ -101,11 +178,12 @@ private extension PlayerView {
     }
 
     func stopVideo() {
-        if player?.timeControlStatus == .playing {
-            player?.pause()
+        // Always, not only while playing: a video still buffering would otherwise start on its own.
+        player?.pause()
+        if player?.currentItem != nil {
             player?.seek(to: .zero)
-            state = .stopped
         }
+        state = .stopped
     }
 
     func restartVideo() {
@@ -116,7 +194,7 @@ private extension PlayerView {
         }
     }
 
-    func addObserverToVideo() {
+    func addObservers() {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(restartVideoObserver),
@@ -141,6 +219,12 @@ private extension PlayerView {
             name: .replaceCurrentItem,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
     }
 
     @objc
@@ -160,9 +244,14 @@ private extension PlayerView {
 
     @objc
     func replaceCurrentItemObserver() {
-        self.player?.replaceCurrentItem(with: nil)
-        self.observation = nil
+        tearDown()
         self.player = nil
+    }
+
+    @objc
+    func applicationDidEnterBackground() {
+        // The story viewer resumes it when the app is active again.
+        player?.pause()
     }
 }
 
@@ -170,11 +259,13 @@ private extension PlayerView {
 
 private extension PlayerView {
     func addActivityIndicatory() {
-        removeActivityIndicatory()
+        guard !subviews.contains(where: { $0.tag == 999 }) else { return }
         let w = UIScreen.main.bounds.width
         let h = UIScreen.main.bounds.height
         let view = UIView(frame: CGRect(x: 0, y: 0, width: w, height: h))
-        view.backgroundColor = .black
+        // Buffering mid video keeps the last frame visible under the spinner.
+        view.backgroundColor = state == .started ? .clear : .black
+        view.isUserInteractionEnabled = false
         view.tag = 999
         self.addSubview(view)
         let activityView = UIActivityIndicatorView(style: .large)
@@ -197,6 +288,22 @@ private extension PlayerView {
             contentView.topAnchor.constraint(equalTo: self.topAnchor, constant: 0),
         ])
         playerLayer.frame = contentView.frame
+    }
+
+    func setupFailureLabel() {
+        failureLabel.text = NSLocalizedString("This video can't be played", comment: "story video failed to load")
+        failureLabel.textColor = UIColor.white.withAlphaComponent(0.8)
+        failureLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        failureLabel.textAlignment = .center
+        failureLabel.numberOfLines = 0
+        failureLabel.isHidden = true
+        failureLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(failureLabel)
+        NSLayoutConstraint.activate([
+            failureLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            failureLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            failureLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 24),
+        ])
     }
 
     func removeActivityIndicatory() {

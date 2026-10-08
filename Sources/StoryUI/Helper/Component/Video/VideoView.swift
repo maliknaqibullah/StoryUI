@@ -9,17 +9,17 @@ import SwiftUI
 import AVKit
 
 struct VideoView: UIViewRepresentable {
-    
+
     // MARK: Public Properties
     var videoURL: String
     @Binding var state: MediaState
     var player: AVPlayer
     let mediaState: ((MediaState, Double) -> Void)?
-    
+
     func makeUIView(context: Context) -> PlayerView {
         let playerView = PlayerView(
             frame: .init(
-                x: 0, 
+                x: 0,
                 y: 0,
                 width: UIScreen.main.bounds.width,
                 height: UIScreen.main.bounds.height
@@ -35,13 +35,19 @@ struct VideoView: UIViewRepresentable {
         }
         return playerView
     }
-    
+
     func updateUIView(_ playerView: PlayerView, context: Context) {
         playerView.state = state
-        playerView.startVideo(url: URL(string: videoURL))
         playerView.mediaState = { state, duration in
             mediaState?(state, duration)
         }
+        playerView.startVideo(url: URL(string: videoURL))
     }
-    
+
+    static func dismantleUIView(_ playerView: PlayerView, coordinator: ()) {
+        // Leaving the screen (next story is a photo, viewer closed): stop for good, not just pause.
+        playerView.mediaState = nil
+        playerView.tearDown()
+    }
+
 }

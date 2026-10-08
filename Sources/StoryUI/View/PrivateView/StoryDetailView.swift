@@ -64,6 +64,16 @@ struct StoryDetailView: View {
     /// release restores it instead of blindly resuming a story that some other
     /// feature (viewers sheet, delete dialog) wants stopped.
     @State private var wasPausedBeforeTouch: Bool = false
+    /// The app is not active (another app, the app switcher, a call): the story stands still.
+    @State private var isAppInactive: Bool = false
+    /// The video story that played to its end, so its progress closes even when the last playhead
+    /// position falls a frame short of the duration.
+    @State private var finishedVideoStoryID: String?
+    /// Video stories that cannot be played; they run for the default time, like a photo.
+    @State private var failedVideoStoryIDs: Set<String> = []
+    /// The video story whose item the player holds. Until the next video's item is ready the player
+    /// still reports the previous one's playhead, which must not move the new story's progress.
+    @State private var playerStoryID: String?
 
     private var isMyStory: Bool {
           model.id == myUserID
@@ -76,7 +86,7 @@ struct StoryDetailView: View {
      disagreeing about whether the story is running.
     */
     private var isStoryHalted: Bool {
-        isPaused || isComposerActive || keyboardManager.isKeyboardOpen
+        isPaused || isComposerActive || keyboardManager.isKeyboardOpen || isAppInactive
     }
     private var messageViewPosition: CGFloat {
         return -keyboardManager.currentHeight
@@ -261,6 +271,19 @@ struct StoryDetailView: View {
         }
         .onDisappear {
             closeComposer()
+            player.pause()
+        }
+        /*
+         Leaving the app pauses the story, video and progress alike. The audio session of the host
+         may allow background audio, so a video left running kept playing in other apps.
+        */
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            isAppInactive = true
+            player.pause()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            isAppInactive = false
+            playVideo()
         }
         .onChange(of: viewModel.currentStoryUser) { newValue in
             closeComposer()
@@ -364,9 +387,22 @@ private extension StoryDetailView {
                 state: $state,
                 player: player
             ) { media, duration in
-                model.stories[index].duration = duration
-                start(index: index)
-                state = media
+                switch media {
+                case .finished:
+                    finishedVideoStoryID = story.id
+                case .failed:
+                    failedVideoStoryIDs.insert(story.id)
+                    model.stories[index].duration = duration
+                    start(index: index)
+                    state = media
+                default:
+                    if media == .ready || media == .started {
+                        playerStoryID = story.id
+                    }
+                    model.stories[index].duration = duration
+                    start(index: index)
+                    state = media
+                }
             }
             .onChange(of: state) { _ in
                 playVideo()
@@ -588,9 +624,7 @@ private extension StoryDetailView {
 
     func resumeStory() {
         isPaused = false
-        if model.stories[getCurrentIndex()].config.mediaType == .video {
-            player.play()
-        }
+        playVideo()
     }
     
     func startProgress() {
@@ -614,8 +648,28 @@ private extension StoryDetailView {
                     */
                     reportDisplayedIfNeeded(story)
 
-                    let increment = 0.01 / story.duration
-                    currentStoryProgress += increment
+                    if story.config.mediaType == .video,
+                       !failedVideoStoryIDs.contains(story.id) {
+                        /*
+                         A video's progress is its playhead: it stands still while the
+                         video buffers and ends when the video does, so a slow network
+                         never moves the story on before it was seen.
+                        */
+                        if finishedVideoStoryID == story.id {
+                            finishedVideoStoryID = nil
+                            currentStoryProgress = 1
+                        } else if playerStoryID != story.id {
+                            currentStoryProgress = 0
+                        } else {
+                            let seconds = player.currentTime().seconds
+                            if seconds.isFinite, story.duration > 0 {
+                                currentStoryProgress = min(max(CGFloat(seconds / story.duration), 0), 1)
+                            }
+                        }
+                    } else {
+                        let increment = 0.01 / story.duration
+                        currentStoryProgress += increment
+                    }
                     timerProgress = CGFloat(index) + currentStoryProgress
                     
                     if currentStoryProgress >= 1.0 {
@@ -648,6 +702,7 @@ private extension StoryDetailView {
         guard !isTapDisabled else {
             return
         }
+        finishedVideoStoryID = nil
         
         if (timerProgress + 1) > CGFloat(model.stories.count) {
             // Next user
@@ -669,6 +724,7 @@ private extension StoryDetailView {
         guard !isTapDisabled else {
             return
         }
+        finishedVideoStoryID = nil
         
         if (timerProgress - 1) < 0 {
             // Previous user
@@ -710,10 +766,9 @@ private extension StoryDetailView {
     }
     
     func resetAVPlayer() {
-        Task {
-            player.pause()
-        }
+        player.pause()
         player = AVPlayer()
+        playerStoryID = nil
     }
     
     func pauseVideo() {
@@ -729,11 +784,10 @@ private extension StoryDetailView {
         let video = model.stories[index].config.mediaType == .video
         let isReady = state == .ready || state == .started
         
+        // Synchronous on purpose: a play deferred to a later task could land after the viewer
+        // closed (or the app left) and start a video nobody sees.
         if isReady, currentUser, video {
-            player.automaticallyWaitsToMinimizeStalling = false
-            Task {
-                player.play()
-            }
+            player.play()
         }
     }
     
