@@ -199,6 +199,10 @@ struct StoryDetailView: View {
                         }
                     }
 
+                    if !isMyStory {
+                        getEmojiView(story: story)
+                    }
+
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -473,6 +477,40 @@ private extension StoryDetailView {
         }
     }
     
+    /*
+     WhatsApp style reaction grid: while the reply field has the keyboard and
+     no text yet, the story's emoji rows float in the free space above the
+     composer; a tap sends that emoji as the reply and closes the keyboard.
+    */
+    @ViewBuilder
+    func getEmojiView(story: Story) -> some View {
+        if case .message(_, let emojis, _) = story.config.storyType,
+           let emojis, isComposerActive, showEmoji {
+            VStack {
+                Spacer()
+                EmojiView(
+                    story: story,
+                    emojiArray: emojis,
+                    startAnimating: $startAnimate,
+                    selectedEmoji: $selectedEmoji,
+                    userClosure: userClosure
+                )
+                Spacer()
+            }
+            //the composer row (input, paddings, glass) sits under this space
+            .padding(.bottom, keyboardManager.currentHeight + 92)
+            .transition(.opacity)
+        }
+        if startAnimate {
+            EmojiReactionView(
+                dissmis: $startAnimate,
+                isAnimationStarted: $isAnimationStarted,
+                emoji: selectedEmoji
+            )
+            .allowsHitTesting(false)
+        }
+    }
+
     @ViewBuilder
     func messageView(with index: Int) -> some View {
         let story = getStory(with: index)

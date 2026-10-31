@@ -30,6 +30,18 @@ struct MessageView: View {
     }
 
     private let inputHeight: CGFloat = 44
+    /// Quick reactions shown inside the reply field while it is idle (WhatsApp
+    /// style): the first three emojis of the story's first emoji row.
+    private var quickEmojis: [String] {
+        if case .message(_, let emojis, _) = story.config.storyType,
+           let row = emojis?.first {
+            return Array(row.prefix(3))
+        }
+        return []
+    }
+    private var showsQuickEmojis: Bool {
+        !hasMessageText && !isMessageFocused && !quickEmojis.isEmpty
+    }
     private let actionButtonSize: CGFloat = 48
     private let actionIconSize: CGFloat = 38
 
@@ -152,11 +164,30 @@ private extension MessageView {
             .font(.system(size: 17))
             .foregroundColor(.white)
             .frame(height: inputHeight)
-            .padding(.horizontal, 16)
+            .padding(.leading, 16)
+            .padding(.trailing, showsQuickEmojis ? 16 + CGFloat(quickEmojis.count) * 40 : 16)
             .overlay(
                 Capsule()
                     .stroke(Color.white.opacity(0.9), lineWidth: 1.2)
             )
+            .overlay(alignment: .trailing) {
+                if showsQuickEmojis {
+                    HStack(spacing: 8) {
+                        ForEach(quickEmojis, id: \.self) { emoji in
+                            Button {
+                                //a quick reaction is sent as an emoji reply, like the grid
+                                userClosure?(story, nil, emoji, false)
+                            } label: {
+                                Text(emoji)
+                                    .font(.system(size: 26))
+                                    .frame(width: 32, height: inputHeight)
+                                    .contentShape(Rectangle())
+                            }
+                        }
+                    }
+                    .padding(.trailing, 10)
+                }
+            }
             .focused($isMessageFocused)
             if hasMessageText {
                 sendButton

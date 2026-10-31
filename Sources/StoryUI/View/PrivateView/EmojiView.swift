@@ -17,23 +17,15 @@ struct EmojiView: View {
     
     let userClosure: UserCompletionHandler?
     
-    private var emojiSize: CGFloat {
-        if emojiArray?.count == 1 {
-            return 55
-        }
-        return CGFloat(100/(emojiArray?.count ?? .zero))
-    }
-    
-    private var spacing: CGFloat {
-        if emojiArray?.count == 1 {
-            return 40
-        }
-        return CGFloat(80/(emojiArray?.count ?? .zero))
-    }
+    private let emojiSize: CGFloat = 44
+    private let spacing: CGFloat = 36
     
     var body: some View {
         if let emojiArray = emojiArray {
             VStack(spacing: spacing) {
+                Text("Tap to send")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.9))
                 ForEach(0..<emojiArray.count, id: \.self) { index in
                     HStack(spacing: spacing) {
                         ForEach(0..<emojiArray[index].count, id: \.self) { icon in
